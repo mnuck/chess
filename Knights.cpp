@@ -27,6 +27,8 @@ Knights::Knights()
         _attacks[index] = generateAttacksFrom(index);
     }
 }
+
+
 BitBoard Knights::generateAttacksFrom(Square index)
 {
     BitBoard x = 1LL << index;

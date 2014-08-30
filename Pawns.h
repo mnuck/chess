@@ -12,6 +12,9 @@ public:
     BitBoard getAttacksFrom(BitBoard attackers,
                             BitBoard targets,
                             Board::Color color);
+    BitBoard getMovesFrom(BitBoard pawns,
+                          BitBoard blockers,
+                          Board::Color color);
 
 protected:
     Pawns();

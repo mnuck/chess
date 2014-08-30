@@ -34,7 +34,7 @@ Board::~Board() {}
 
 BitBoard Board::getKingAttacks(Color color)
 {
-/*    BitBoard king = _pieces[Kings] & _colors[color];
+    BitBoard king = _pieces[Kings] & _colors[color];
     Board::Color otherColor = Board::Color(color - 1);
     BitBoard unsafe = 
         getKingAttacks(otherColor) |
@@ -43,8 +43,7 @@ BitBoard Board::getKingAttacks(Color color)
         getKnightAttacks(otherColor) |
         getRookAttacks(otherColor) |
         getPawnAttacks(otherColor);
-    return Kings::GetInstance().getAttacksFrom(king, ~unsafe); */
-    return BitBoard(0LL);
+    return Kings::GetInstance().getAttacksFrom(king, unsafe, _colors[color]);
 }
 
 
