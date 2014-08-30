@@ -8,7 +8,7 @@ class Kings
 {
 public:
     static Kings& GetInstance();
-    virtual ~Pawns();
+    virtual ~Kings();
     BitBoard getAttacksFrom(BitBoard attackers,
                             BitBoard safe);
 protected:

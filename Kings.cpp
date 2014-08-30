@@ -23,9 +23,5 @@ Kings::Kings()
 BitBoard Kings::getAttacksFrom(BitBoard kings,
                                BitBoard safe)
 {
-    int eastOffset = 9 - (color * 16);
-    int westOffset = 7 - (color * 16);
-    BitBoard eastAttacks = attackers & notAFile << eastOffset;
-    BitBoard westAttacks = attackers & notHFile << westOffset;
-    return (eastAttacks | westAttacks) & targets;
+    return kings & safe;
 }

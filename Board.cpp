@@ -32,33 +32,33 @@ Board& Board::operator=(const Board& that)
 Board::~Board() {}
 
 
-BitBoard getKingAttacks(Color color)
+BitBoard Board::getKingAttacks(Color color)
 {
-    BitBoard king = _pieces[King] & _colors[color];
-    Color otherColor = color - 1;
+/*    BitBoard king = _pieces[Kings] & _colors[color];
+    Board::Color otherColor = Board::Color(color - 1);
     BitBoard unsafe = 
         getKingAttacks(otherColor) |
         getQueenAttacks(otherColor) |
-        getBishipAttacks(otherColor) |
+        getBishopAttacks(otherColor) |
         getKnightAttacks(otherColor) |
         getRookAttacks(otherColor) |
         getPawnAttacks(otherColor);
-    //return Kings::GetInstance().getAttacksFrom(king, ~unsafe);
+    return Kings::GetInstance().getAttacksFrom(king, ~unsafe); */
     return BitBoard(0LL);
 }
 
 
-BitBoard getQueenAttacks(Color color)
+BitBoard Board::getQueenAttacks(Color color)
 {
-    BitBoard queens = _pieces[Queens] & _colors[color];
+    //BitBoard queens = _pieces[Queens] & _colors[color];
     //return Queens::GetInstance().getAttacksFrom(queens);
     return BitBoard(0LL);    
 }
 
 
-BitBoard getBishopAttacks(Color color)
+BitBoard Board::getBishopAttacks(Color color)
 {
-    BitBoard bishops = _pieces[Bishops] & _colors[color];
+    //BitBoard bishops = _pieces[Bishops] & _colors[color];
     //return Bishops::GetInstance().getAttacksFrom(bishops);
     return BitBoard(0LL);
 }
@@ -67,13 +67,15 @@ BitBoard getBishopAttacks(Color color)
 BitBoard Board::getKnightAttacks(Color color)
 {
     BitBoard knights = _pieces[Knights] & _colors[color];
-    return Knights::GetInstance().getAttacksFrom(knights);    
+    BitBoard obstructions = _colors[color];
+    return Knights::GetInstance().getAttacksFrom(knights, obstructions);
+    
 }
 
 
-BitBoard getRookAttacks(Color color)
+BitBoard Board::getRookAttacks(Color color)
 {
-    BitBoard rooks = _pieces[Rook] & _colors[color];
+    //BitBoard rooks = _pieces[Rook] & _colors[color];
     //return Rooks::GetInstance().getAttacksFrom(rooks);
     return BitBoard(0LL);    
 }

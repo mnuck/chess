@@ -42,13 +42,14 @@ BitBoard Knights::generateAttacksFrom(Square index)
 }
 
 
-BitBoard Knights::getAttacksFrom(BitBoard attackingKnights)
+BitBoard Knights::getAttacksFrom(BitBoard attackers, BitBoard obstructions)
 {
-    BitBoard left1  = (attackingKnights >> 1) & 0x7f7f7f7f7f7f7f7f;
-    BitBoard left2  = (attackingKnights >> 2) & 0x3f3f3f3f3f3f3f3f;
-    BitBoard right1 = (attackingKnights << 1) & 0xfefefefefefefefe;
-    BitBoard right2 = (attackingKnights << 2) & 0xfcfcfcfcfcfcfcfc;
+    BitBoard left1  = (attackers >> 1) & 0x7f7f7f7f7f7f7f7f;
+    BitBoard left2  = (attackers >> 2) & 0x3f3f3f3f3f3f3f3f;
+    BitBoard right1 = (attackers << 1) & 0xfefefefefefefefe;
+    BitBoard right2 = (attackers << 2) & 0xfcfcfcfcfcfcfcfc;
     BitBoard h1 = left1 | right1;
     BitBoard h2 = left2 | right2;
-    return (h1 << 16) | (h1 >> 16) | (h2 << 8) | (h2 >> 8);
+    BitBoard attacks = (h1 << 16) | (h1 >> 16) | (h2 << 8) | (h2 >> 8);
+    return attacks & ~obstructions;
 }
