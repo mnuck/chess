@@ -24,7 +24,7 @@ Board::Board(const Board& that)
 Board& Board::operator=(const Board& that)
 {
     _pieces = that._pieces;
-    _colors = that._colors;    
+    _colors = that._colors;
     return *this;
 }
 
@@ -34,32 +34,48 @@ Board::~Board() {}
 
 BitBoard Board::getKingAttacks(Color color)
 {
+    Board::Color otherColor = Board::Color(abs(color - 1));
+
     BitBoard king = _pieces[Kings] & _colors[color];
-    Board::Color otherColor = Board::Color(color - 1);
-    BitBoard unsafe = 
-        getKingAttacks(otherColor) |
-        getQueenAttacks(otherColor) |
-        getBishopAttacks(otherColor) |
-        getKnightAttacks(otherColor) |
-        getRookAttacks(otherColor) |
-        getPawnAttacks(otherColor);
+    BitBoard otherKing = _pieces[Kings] & _colors[otherColor];
+    BitBoard otherQueens = _pieces[Queens] & _colors[otherColor];
+    BitBoard otherBishops = _pieces[Bishops] & _colors[otherColor];
+    BitBoard otherRooks = _pieces[Rooks] & _colors[otherColor];
+    BitBoard otherKnights = _pieces[Knights] & _colors[otherColor];
+    BitBoard otherPawns = _pieces[Pawns] & _colors[otherColor];
+    BitBoard allPieces = _colors[color] & _colors[otherColor];
+
+    BitBoard unsafe =
+        Kings::GetInstance().getAttacksFrom(otherKing, 0LL, 0LL) |
+        Queens::GetInstance().getAttacksFrom(otherQueens, allPieces, _colors[otherColor]) |
+        Bishops::GetInstance().getAttacksFrom(otherBishops, allPieces, _colors[otherColor]) |
+        Rooks::GetInstance().getAttacksFrom(otherRooks, allPieces, _colors[otherColor]) |
+        Knights::GetInstance().getAttacksFrom(otherKnights, 0LL) |
+        Pawns::GetInstance().getAttacksFrom(otherPawns, allPieces, otherColor);
+    
     return Kings::GetInstance().getAttacksFrom(king, unsafe, _colors[color]);
 }
 
 
 BitBoard Board::getQueenAttacks(Color color)
 {
-    //BitBoard queens = _pieces[Queens] & _colors[color];
-    //return Queens::GetInstance().getAttacksFrom(queens);
-    return BitBoard(0LL);    
+    Board::Color otherColor = Board::Color(abs(color - 1));
+
+    BitBoard queens = _pieces[Queens] & _colors[color];
+    return Queens::GetInstance().getAttacksFrom(queens,
+                                                _colors[color],
+                                                _colors[otherColor]);
 }
 
 
 BitBoard Board::getBishopAttacks(Color color)
 {
-    //BitBoard bishops = _pieces[Bishops] & _colors[color];
-    //return Bishops::GetInstance().getAttacksFrom(bishops);
-    return BitBoard(0LL);
+    Board::Color otherColor = Board::Color(abs(color - 1));
+
+    BitBoard bishops = _pieces[Bishops] & _colors[color];
+    return Bishops::GetInstance().getAttacksFrom(bishops,
+                                                _colors[color],
+                                                _colors[otherColor]);
 }
 
 
@@ -67,16 +83,18 @@ BitBoard Board::getKnightAttacks(Color color)
 {
     BitBoard knights = _pieces[Knights] & _colors[color];
     BitBoard obstructions = _colors[color];
-    return Knights::GetInstance().getAttacksFrom(knights, obstructions);
-    
+    return Knights::GetInstance().getAttacksFrom(knights, obstructions);    
 }
 
 
 BitBoard Board::getRookAttacks(Color color)
 {
-    //BitBoard rooks = _pieces[Rook] & _colors[color];
-    //return Rooks::GetInstance().getAttacksFrom(rooks);
-    return BitBoard(0LL);    
+    Board::Color otherColor = Board::Color(abs(color - 1));
+
+    BitBoard rooks = _pieces[Rooks] & _colors[color];
+    return Bishops::GetInstance().getAttacksFrom(rooks,
+                                                _colors[color],
+                                                _colors[otherColor]);
 }
 
 
@@ -92,6 +110,7 @@ Board Board::initial()
 {
     Board result;
     result._pieces[Pawns]   = 0x00FF00000000FF00;
+    result._pieces[Pawns]   = 0x0000000000000000;
     result._pieces[Rooks]   = 0x8100000000000081;
     result._pieces[Knights] = 0x4200000000000042;
     result._pieces[Bishops] = 0x2400000000000024;

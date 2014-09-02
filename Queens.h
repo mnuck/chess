@@ -9,9 +9,9 @@ class Queens
 public:
     static Queens& GetInstance();
     virtual ~Queens();
-    BitBoard getAttacksFrom(BitBoard attackers,
-                            BitBoard targets,
-                            BitBoard friendlies);
+    BitBoard getAttacksFrom(const BitBoard& attackers,
+                            const BitBoard& targets,
+                            const BitBoard& obstructions);
 
 protected:
     Queens();

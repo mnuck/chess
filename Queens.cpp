@@ -1,6 +1,8 @@
 #include "BitBoard.h"
 #include "Board.h"
 #include "Queens.h"
+#include "Rooks.h"
+#include "Bishops.h"
 
 Queens& Queens::GetInstance()
 {
@@ -21,9 +23,11 @@ Queens::Queens()
 }
 
 
-BitBoard Queens::getAttacksFrom(BitBoard queens,
-                                BitBoard targets,
-                                BitBoard friendlies)
+BitBoard Queens::getAttacksFrom(const BitBoard& queens,
+                                const BitBoard& targets,
+                                const BitBoard& friendlies)
 {
-    return 0LL;
+    return 
+        Bishops::GetInstance().getAttacksFrom(queens, targets, friendlies) |
+        Rooks::GetInstance().getAttacksFrom(queens, targets, friendlies);
 }

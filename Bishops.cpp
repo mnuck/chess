@@ -25,5 +25,15 @@ BitBoard Bishops::getAttacksFrom(BitBoard bishops,
                                  BitBoard targets,
                                  BitBoard friendlies)
 {
-    return 0LL;
+    BitBoard clear = ~(friendlies | targets);
+    
+    BitBoard neAttacks = shiftNE(smearNE(bishops, clear));
+    BitBoard seAttacks = shiftSE(smearSE(bishops, clear));
+    BitBoard swAttacks = shiftSW(smearSW(bishops, clear));
+    BitBoard nwAttacks = shiftNW(smearNW(bishops, clear));
+    BitBoard attacks = 
+        neAttacks | seAttacks | swAttacks | nwAttacks;
+    attacks &= ~friendlies;
+
+    return attacks;
 }

@@ -10,7 +10,8 @@ public:
     static Knights& GetInstance();
     virtual ~Knights();
     BitBoard getAttacksFrom(Square index);
-    BitBoard getAttacksFrom(BitBoard attackers, BitBoard obstructions);
+    BitBoard getAttacksFrom(BitBoard knights, 
+                            BitBoard obstructions);
 
 protected:
     Knights();
