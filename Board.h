@@ -39,8 +39,13 @@ public:
     Board& operator=(const Board& that);
     ~Board();
 
-    BitBoard getUnsafe(Color color);
+    std::vector<Move> getMoves(Color color);
+    Board applyMove(Move move);
 
+    static Board initial();
+    
+private:
+    BitBoard getUnsafe(Color color);
     BitBoard getKingAttacks(Color color);
     BitBoard getQueenAttacks(Color color);
     BitBoard getBishopAttacks(Color color);
@@ -56,11 +61,7 @@ public:
     std::vector<Move> getPawnMoves(Color color);
 
     std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator);
-    std::vector<Move> getMoves(Color color);
 
-    static Board initial();
-    
-private:
     std::array<BitBoard, 6> _pieces;
     std::array<BitBoard, 2> _colors;
 };

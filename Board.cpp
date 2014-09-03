@@ -33,6 +33,49 @@ Board& Board::operator=(const Board& that)
 Board::~Board() {}
 
 
+Board Board::applyMove(Move move)
+{
+    Board result(*this);
+
+    const BitBoard source = (1LL << move._source);
+    const BitBoard target = (1LL << move._target);
+
+    for (BitBoard& b: result._pieces)
+    {
+        if (b & source)
+        {
+            b &= ~source;
+            b |= target;
+        } 
+        else
+        {
+            if (b & target)
+            {
+                b &= ~target;
+            }
+        }
+    }
+
+    for (BitBoard& b: result._colors)
+    {
+        if (b & source)
+        {
+            b &= ~source;
+            b |= target;
+        } 
+        else 
+        {
+            if (b & target)
+            {
+                b &= ~target;
+            }
+        }
+    }
+
+    return result;
+}
+
+
 BitBoard Board::getUnsafe(Color color)
 {
     Board::Color otherColor = Board::Color(abs(color - 1));

@@ -33,12 +33,31 @@ double time_stop()
 
 int main()
 {
-    Board b(Board::initial());
+    std::random_device rd;
+    std::default_random_engine el(rd());
+    auto rand = std::uniform_int_distribution<int>(0, 1);    
 
-    for (Move& m: b.getMoves(Board::Black))
-    {
-        std::cout << m << std::endl;
-    }
+    Board board(Board::initial());
+    std::cout << board << std::endl;
+
+    Board::Color color = Board::White;
+    std::vector<Move> moves;
     
+    int i = 0;
+    
+    moves = board.getMoves(color);
+    while (moves.size() > 0)
+    {
+        rand = std::uniform_int_distribution<int>(0, moves.size() - 1);
+        size_t index = rand(el);
+        board = board.applyMove(moves[index]);
+        std::cout << board << std::endl;
+
+        color = Board::Color(abs(1 - color));
+        moves = board.getMoves(color);
+        ++i;
+    }
+    std::cout << i << std::endl;
+
     return 0;
 }
