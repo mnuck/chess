@@ -24,11 +24,18 @@ BitBoard Pawns::getAttacksFrom(BitBoard attackers,
                                BitBoard targets,
                                Board::Color color)
 {
-    int westOffset = 9 - (color << 4);
-    int eastOffset = 7 - (color << 4);
-    BitBoard westAttacks = attackers & notAFile << westOffset;
-    BitBoard eastAttacks = attackers & notHFile << eastOffset;
-    return (eastAttacks | westAttacks) & targets;
+	BitBoard westAttacks, eastAttacks;
+	if (Board::White == color)
+	{
+		westAttacks = attackers & notAFile << 9;
+		eastAttacks = attackers & notHFile << 7;
+	}
+	else
+	{
+		westAttacks = attackers & notAFile >> 7;
+		eastAttacks = attackers & notHFile >> 9;
+	}
+	return (eastAttacks | westAttacks) & targets;
 }
 
 
@@ -36,16 +43,31 @@ BitBoard Pawns::getMovesFrom(BitBoard pawns,
                              BitBoard blockers,
                              Board::Color color)
 {
-    int moveOffset = 8 - (color << 4);
-    BitBoard oneStep = (pawns << moveOffset) & ~blockers;
-    
-    BitBoard homeRow = 0x000000000000FF00 << (color * 40);
-    BitBoard fwdOne  = 0x0000000000FF0000 << (color * 24);
-    
-    BitBoard twoStep = 
-        ~blockers &
-        ((fwdOne & oneStep) << moveOffset) &
-        ((homeRow & pawns) << (2 * moveOffset));
+	BitBoard oneStep, twoStep, homeRow, fwdOne;
+	if (Board::White == color)
+	{
+		oneStep = (pawns << 8) & ~blockers;
 
-    return oneStep & twoStep;
+		homeRow = 0x000000000000FF00LL;
+		fwdOne  = 0x0000000000FF0000LL;
+
+		twoStep =
+			~blockers &
+			((fwdOne & oneStep) << 8) &
+			((homeRow & pawns) << 16);
+	}
+	else
+	{
+		oneStep = (pawns >> 8) & ~blockers;
+
+		homeRow = 0x00FF000000000000LL;
+		fwdOne  = 0x0000FF0000000000LL;
+
+		twoStep =
+			~blockers &
+			((fwdOne & oneStep) >> 8) &
+			((homeRow & pawns) >> 16);
+	}
+
+    return oneStep | twoStep;
 }

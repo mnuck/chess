@@ -1,12 +1,12 @@
-.PHONY: all clean
-
 CXX = g++
-CXXFLAGS = -O2 -Wall -W -pedantic-errors -s -std=c++11 -msse4.2
+CXXFLAGS = -ggdb -Wall -W -pedantic-errors -std=c++11 -msse4.2
 
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h *.hpp)
 
 OBJECTS = $(SOURCES:%.cpp=%.o)
+
+all: chess
 
 default: chess
 
