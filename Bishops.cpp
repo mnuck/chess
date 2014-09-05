@@ -1,5 +1,3 @@
-#include "BitBoard.h"
-#include "Board.h"
 #include "Bishops.h"
 
 Bishops& Bishops::GetInstance()

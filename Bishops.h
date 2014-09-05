@@ -2,7 +2,6 @@
 #define _BISHOPS_H_
 
 #include "BitBoard.h"
-#include "Board.h"
 
 class Bishops
 {

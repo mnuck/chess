@@ -11,10 +11,10 @@ public:
     virtual ~Pawns();
     BitBoard getAttacksFrom(BitBoard attackers,
                             BitBoard targets,
-                            Board::Color color);
+                            Color color);
     BitBoard getMovesFrom(BitBoard pawns,
                           BitBoard blockers,
-                          Board::Color color);
+                          Color color);
 
 protected:
     Pawns();

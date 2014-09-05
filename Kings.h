@@ -10,7 +10,6 @@ public:
     static Kings& GetInstance();
     virtual ~Kings();
     BitBoard getAttacksFrom(BitBoard king,
-                            BitBoard unsafe,
                             BitBoard obstructions);
 protected:
     Kings();

@@ -2,9 +2,9 @@
 #include <functional>
 #include <iostream>
 #include <random>
+#include <vector>
 
 #include "Board.h"
-#include "Knights.h"
 
 using std::chrono::steady_clock;
 using std::chrono::duration;
@@ -26,38 +26,39 @@ double time_stop()
     return time_span.count();
 }
 
-#include <vector>
 
-#include "Board.h"
-#include "Move.h"
-
-int main()
+int main(int argc, char* argv[])
 {
+    Board board(Board::initial());
+    if (2 == argc)
+    {
+        board = Board::parse(argv[1]);
+    }
+    std::cout << board << std::endl;
+
+
     std::random_device rd;
     std::default_random_engine el(rd());
     auto rand = std::uniform_int_distribution<int>(0, 1);    
 
-    Board board(Board::initial());
-    std::cout << board << std::endl;
-
-    Board::Color color = Board::White;
+    Color color = White;
     std::vector<Move> moves;
     
     int i = 0;
     
     moves = board.getMoves(color);
-    while (moves.size() > 0)
+    while (moves.size() > 0 && board.good())
     {
         rand = std::uniform_int_distribution<int>(0, moves.size() - 1);
         size_t index = rand(el);
         board = board.applyMove(moves[index]);
-        std::cout << board << std::endl;
 
-        color = Board::Color(abs(1 - color));
+        color = Color(abs(1 - color));
         moves = board.getMoves(color);
         ++i;
+        std::cout << i << std::endl;
+        std::cout << board << std::endl;
     }
-    std::cout << i << std::endl;
 
     return 0;
 }

@@ -11,28 +11,13 @@
 #include <vector>
 
 #include "BitBoard.h"
+#include "Enums.h"
 #include "Move.h"
 
 class Board
 {
 public:
     friend std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
-
-    enum Piece
-    {
-        Pawns,
-        Rooks,
-        Knights,
-        Bishops,
-        Queens,
-        Kings
-    };
-
-    enum Color
-    {
-        White,
-        Black
-    };
 
     Board();
     Board(const Board& that);
@@ -41,8 +26,10 @@ public:
 
     std::vector<Move> getMoves(Color color);
     Board applyMove(Move move);
+    bool good();
 
     static Board initial();
+    static Board parse(char* filename);
     
 private:
     BitBoard getUnsafe(Color color);
@@ -61,6 +48,8 @@ private:
     std::vector<Move> getPawnMoves(Color color);
 
     std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator);
+    bool inCheck(Color color);
+    static bool parse(const char square, Color& color, Piece& piece);
 
     std::array<BitBoard, 6> _pieces;
     std::array<BitBoard, 2> _colors;

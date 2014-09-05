@@ -22,18 +22,18 @@ Pawns::Pawns()
 
 BitBoard Pawns::getAttacksFrom(BitBoard attackers,
                                BitBoard targets,
-                               Board::Color color)
+                               Color color)
 {
 	BitBoard westAttacks, eastAttacks;
-	if (Board::White == color)
+	if (White == color)
 	{
-		westAttacks = attackers & notAFile << 9;
-		eastAttacks = attackers & notHFile << 7;
+		westAttacks = (attackers & notAFile) << 9;
+		eastAttacks = (attackers & notHFile) << 7;
 	}
 	else
 	{
-		westAttacks = attackers & notAFile >> 7;
-		eastAttacks = attackers & notHFile >> 9;
+		westAttacks = (attackers & notAFile) >> 7;
+        eastAttacks = (attackers & notHFile) >> 9;
 	}
 	return (eastAttacks | westAttacks) & targets;
 }
@@ -41,10 +41,10 @@ BitBoard Pawns::getAttacksFrom(BitBoard attackers,
 
 BitBoard Pawns::getMovesFrom(BitBoard pawns,
                              BitBoard blockers,
-                             Board::Color color)
+                             Color color)
 {
 	BitBoard oneStep, twoStep, homeRow, fwdOne;
-	if (Board::White == color)
+	if (White == color)
 	{
 		oneStep = (pawns << 8) & ~blockers;
 

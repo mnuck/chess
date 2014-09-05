@@ -1,10 +1,9 @@
-#pragma once
-
 #ifndef __BITBOARD_H__
 #define __BITBOARD_H__
 
 #include <cstdint>
 #include <iostream>
+
 
 typedef uint64_t BitBoard;
 typedef uint8_t Square;
@@ -36,6 +35,5 @@ BitBoard shiftS(BitBoard source);
 BitBoard shiftSW(BitBoard source);
 BitBoard shiftW(BitBoard source);
 BitBoard shiftNW(BitBoard source);
-
 
 #endif // __BITBOARD_H__

@@ -43,9 +43,8 @@ BitBoard Kings::generateOneStepsFrom(Square index)
 
 
 BitBoard Kings::getAttacksFrom(BitBoard king,
-                               BitBoard unsafe,
                                BitBoard obstructions)
 {
     int kingSquare = __builtin_ffsll(king) - 1;    
-    return _attacks[kingSquare] & ~unsafe & ~obstructions;
+    return _attacks[kingSquare] & ~obstructions;
 }

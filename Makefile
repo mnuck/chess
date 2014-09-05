@@ -10,8 +10,8 @@ all: chess
 
 default: chess
 
-#test: chess
-#	./driver prg6-1.dat prg6-2.dat
+test: chess
+	./chess test.board
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
