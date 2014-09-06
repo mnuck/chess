@@ -36,18 +36,25 @@ int main(int argc, char* argv[])
     }
     std::cout << board << std::endl;
 
-
     std::random_device rd;
     std::default_random_engine el(rd());
     auto rand = std::uniform_int_distribution<int>(0, 1);    
 
     Color color = White;
     std::vector<Move> moves;
-    
-    int i = 0;
-    
+
     moves = board.getMoves(color);
-    while (moves.size() > 0 && board.good())
+
+    time_start();
+    for (int i = 0; i < 10000000; ++i)
+        Board b = board.applyMove(moves[2]);
+
+    std::cout << time_stop() << std::endl;
+
+
+    
+/*
+    for (int i = 0; moves.size() > 0 && board.good(); ++i)
     {
         rand = std::uniform_int_distribution<int>(0, moves.size() - 1);
         size_t index = rand(el);
@@ -55,10 +62,9 @@ int main(int argc, char* argv[])
 
         color = Color(abs(1 - color));
         moves = board.getMoves(color);
-        ++i;
         std::cout << i << std::endl;
         std::cout << board << std::endl;
     }
-
+*/
     return 0;
 }

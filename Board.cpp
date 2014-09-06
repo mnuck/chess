@@ -48,13 +48,12 @@ Board Board::applyMove(Move move)
         {
             result._pieces[i] &= ~source;
             result._pieces[i] |= target;
-        } 
-        else 
+            continue;
+        }
+        if (result._pieces[i] & target)
         {
-            if (result._pieces[i] & target)
-            {
-                result._pieces[i] &= ~target;
-            }
+            result._pieces[i] &= ~target;
+            continue;
         }
     }
 
@@ -64,20 +63,59 @@ Board Board::applyMove(Move move)
         {
             result._colors[i] &= ~source;
             result._colors[i] |= target;
+            continue;
         } 
-        else 
+        if (result._colors[i] & target)
         {
-            if (result._colors[i] & target)
-            {
-                result._colors[i] &= ~target;
-            }
+            result._colors[i] &= ~target;
+            continue;
         }
     }
 
+    // promotions
     if (result._pieces[Pawn] & target & 0xFF000000000000FFLL)
     {
         result._pieces[Pawn] &= ~target;
         result._pieces[move._piece] |= target;
+    }
+
+    // castling
+    if (result._pieces[King] & target)
+    {
+        if (2 == move._source - move._target)
+        {
+            if (result._colors[White] & target)
+            {
+                result._pieces[Rook] &=  0xFFFFFFFFFFFFFFFELL;
+                result._colors[White] &= 0xFFFFFFFFFFFFFFFELL;
+                result._pieces[Rook] |=  0x0000000000000004LL;
+                result._colors[White] |= 0x0000000000000004LL;
+            } 
+            else 
+            {
+                result._pieces[Rook] &=  0xFEFFFFFFFFFFFFFFLL;
+                result._colors[Black] &= 0xFEFFFFFFFFFFFFFFLL;
+                result._pieces[Rook] |=  0x0400000000000000LL;
+                result._colors[Black] |= 0x0400000000000000LL;
+            }
+        }
+        else if (2 == move._target - move._source)
+        {
+            if (result._colors[White] & target)
+            {
+                result._pieces[Rook] &=  0xFFFFFFFFFFFFFF7FLL;
+                result._colors[White] &= 0xFFFFFFFFFFFFFF7FLL;
+                result._pieces[Rook] |=  0x0000000000000010LL;
+                result._colors[White] |= 0x0000000000000010LL;
+            }
+            else
+            {
+                result._pieces[Rook] &=  0x7FFFFFFFFFFFFFFFLL;
+                result._colors[Black] &= 0x7FFFFFFFFFFFFFFFLL;
+                result._pieces[Rook] |=  0x1000000000000000LL;
+                result._colors[Black] |= 0x1000000000000000LL;
+            }
+        }
     }
 
     return result;
@@ -86,27 +124,11 @@ Board Board::applyMove(Move move)
 
 bool Board::good()
 {
-    if (_pieces[Pawn])
-    {
-        return true;
-    }
-    if (_pieces[Rook])
-    {
-        return true;
-    }
-    if (_pieces[Knight])
-    {
-        return true;
-    }
-    if (_pieces[Bishop])
-    {
-        return true;
-    }
-    if (_pieces[Queen])
-    {
-        return true;
-    }
-    return false;
+    return _pieces[Pawn]   |
+           _pieces[Rook]   |
+           _pieces[Knight] |
+           _pieces[Bishop] |
+           _pieces[Queen];    
 }
 
 
@@ -322,16 +344,14 @@ std::vector<Move> Board::getMoves(Color color)
     result.insert(result.end(), rooks.begin(), rooks.end());
     result.insert(result.end(), pawns.begin(), pawns.end());
 
-    result.erase(
-        std::remove_if(
-            result.begin(), 
-            result.end(), 
-            [&] (Move& move) -> bool
-            {
-                return this->applyMove(move).inCheck(color);                
-            }),
-        result.end());
-    
+    std::remove_if(
+        result.begin(), 
+        result.end(), 
+        [this, color] (Move& move) -> bool
+        {
+            return this->applyMove(move).inCheck(color);                
+        });
+
     return result;
 }
 

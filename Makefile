@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -ggdb -Wall -W -pedantic-errors -std=c++11 -msse4.2
+CXXFLAGS = -O3 -Wall -W -pedantic-errors -std=c++11 -msse4.2
 
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h *.hpp)
