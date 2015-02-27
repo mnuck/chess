@@ -323,6 +323,64 @@ std::vector<Move> Board::getPawnMoves(Color color)
 }
 
 
+std::vector<Move> Board::getCastlingMoves(Color color)
+{
+    std::vector<Move> result;
+    BitBoard kingInitialLoc;
+    if (White == color)
+        kingInitialLoc = 0x0000000000000008;
+    else
+        kingInitialLoc = 0x0800000000000000;
+
+    if ((_pieces[King] & _colors[color]) != kingInitialLoc)
+        // king is not in initial position
+        return result;
+    
+    Square kingLoc = __builtin_ffsll(kingInitialLoc) - 1;
+    for (Move& m: _moves)
+    {
+        if (m.getSource() == kingLoc)
+        {
+            // king has moved
+            return result;
+        }
+    }
+
+    BitBoard unsafe = getUnsafe(color);
+    if (unsafe & kingInitialLoc)
+        // king is in check
+        return result;
+
+    BitBoard noGo = _colors[Black] | _colors[White] | unsafe;
+
+    auto checkSide = [&](BitBoard path, 
+                         BitBoard rookInitialLoc,
+                         int moveOffset) -> void
+    {
+        if (path & noGo)
+            // path is unusable
+            return;
+    
+        if ((_pieces[Rook] & _colors[color] & rookInitialLoc) == 0LL)
+            // rook is not in initial position
+            return;
+
+        Square rookLoc = __builtin_ffsll(rookInitialLoc) - 1;
+        for (Move& m: _moves)
+            if (m.getSource() == rookLoc)
+                // rook has moved
+                return;
+
+        result.push_back(Move(kingLoc, kingLoc + moveOffset));
+    };
+
+    checkSide(3LL << (kingLoc - 2), kingInitialLoc >> 3, -2); // kingside
+    checkSide(7LL << (kingLoc + 1), kingInitialLoc << 4,  2); // queenside
+    
+    return result;
+}
+    
+
 bool Board::inCheck(Color color)
 {
     BitBoard unsafe = getUnsafe(color);
@@ -339,6 +397,7 @@ std::vector<Move> Board::getMoves(Color color)
     std::vector<Move> knights = getKnightMoves(color);
     std::vector<Move> rooks = getRookMoves(color);
     std::vector<Move> pawns = getPawnMoves(color);
+    std::vector<Move> castles = getCastlingMoves(color);
 
     result.insert(result.end(), kings.begin(), kings.end());
     result.insert(result.end(), queens.begin(), queens.end());
@@ -346,6 +405,7 @@ std::vector<Move> Board::getMoves(Color color)
     result.insert(result.end(), knights.begin(), knights.end());
     result.insert(result.end(), rooks.begin(), rooks.end());
     result.insert(result.end(), pawns.begin(), pawns.end());
+    result.insert(result.end(), castles.begin(), castles.end());
 
     result.erase(
         std::remove_if(

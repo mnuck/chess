@@ -50,6 +50,7 @@ private:
     std::vector<Move> getKnightMoves(Color color);
     std::vector<Move> getRookMoves(Color color);
     std::vector<Move> getPawnMoves(Color color);
+    std::vector<Move> getCastlingMoves(Color color);
 
     std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator);
     bool inCheck(Color color);
@@ -57,6 +58,7 @@ private:
 
     std::array<BitBoard, 6> _pieces;
     std::array<BitBoard, 2> _colors;
+    std::vector<Move> _moves;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Board& rhs);

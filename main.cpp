@@ -29,7 +29,6 @@ double time_stop()
 
 int main(int argc, char* argv[])
 {
-    BixNix::Board board(BixNix::Board::initial());
     if (2 == argc)
     {
         if ("--test" == std::string(argv[1]))
@@ -47,10 +46,15 @@ int main(int argc, char* argv[])
     }
     
 
+    BixNix::Board board = BixNix::Board::parse("tests/WhiteCanCastleQueenside");
+    std::cout << board << std::endl;
+    board = board.applyMove(BixNix::Move(3, 5));
+    std::cout << board << std::endl;
+    
+
     //std::random_device rd;
     //std::default_random_engine el(rd());
-    //auto rand = std::uniform_int_distribution<int>(0, 1);    
-
+    //auto rand = std::uniform_int_distribution<int>(0, 1);
 
 /*    for (BixNix::Move& m: moves)
     {
@@ -59,14 +63,14 @@ int main(int argc, char* argv[])
         std::cout << b << std::endl;
     }
 */  
-    BixNix::Color color = BixNix::White;
+/*    BixNix::Color color = BixNix::White;
     
     time_start();
     for (int i = 0; i < 300000; ++i)
         std::vector<BixNix::Move> moves = board.getMoves(color);
 
     std::cout << time_stop() << std::endl;
-    
+*/  
     /*
 
     
