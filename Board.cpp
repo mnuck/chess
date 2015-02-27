@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <fstream>
 #include <vector>
 
 #include "Board.h"
@@ -9,6 +10,9 @@
 #include "Pawns.h"
 #include "Queens.h"
 #include "Rooks.h"
+
+namespace BixNix
+{
 
 Board::Board()
 {
@@ -39,8 +43,8 @@ Board Board::applyMove(Move move)
 {
     Board result = *this;
 
-    const BitBoard source = (1LL << move._source);
-    const BitBoard target = (1LL << move._target);
+    const BitBoard source = (1LL << move.getSource());
+    const BitBoard target = (1LL << move.getTarget());
 
     for (size_t i = 0; i < 6; ++i)
     {
@@ -76,13 +80,13 @@ Board Board::applyMove(Move move)
     if (result._pieces[Pawn] & target & 0xFF000000000000FFLL)
     {
         result._pieces[Pawn] &= ~target;
-        result._pieces[move._piece] |= target;
+        result._pieces[move.getPiece()] |= target;
     }
 
     // castling
     if (result._pieces[King] & target)
     {
-        if (2 == move._source - move._target)
+        if (2 == move.getSource() - move.getTarget())
         {
             if (result._colors[White] & target)
             {
@@ -99,7 +103,7 @@ Board Board::applyMove(Move move)
                 result._colors[Black] |= 0x0400000000000000LL;
             }
         }
-        else if (2 == move._target - move._source)
+        else if (2 == move.getTarget() - move.getSource())
         {
             if (result._colors[White] & target)
             {
@@ -134,7 +138,7 @@ bool Board::good()
 
 BitBoard Board::getUnsafe(Color color)
 {
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     BitBoard otherKing = _pieces[King] & _colors[otherColor];
     BitBoard otherQueens = _pieces[Queen] & _colors[otherColor];
@@ -142,16 +146,14 @@ BitBoard Board::getUnsafe(Color color)
     BitBoard otherRooks = _pieces[Rook] & _colors[otherColor];
     BitBoard otherKnights = _pieces[Knight] & _colors[otherColor];
     BitBoard otherPawns = _pieces[Pawn] & _colors[otherColor];
-    BitBoard allPieces = _colors[color] | _colors[otherColor];
 
     return
-        Kings::GetInstance().getAttacksFrom(otherKing, 0LL) |
-        Queens::GetInstance().getAttacksFrom(otherQueens, allPieces, _colors[otherColor]) |
-        Bishops::GetInstance().getAttacksFrom(otherBishops, allPieces, _colors[otherColor]) |
-        Rooks::GetInstance().getAttacksFrom(otherRooks, allPieces, _colors[otherColor]) |
-        Knights::GetInstance().getAttacksFrom(otherKnights, 0LL) |
-        Pawns::GetInstance().getAttacksFrom(otherPawns, ~0LL, otherColor) |
-        0LL;
+        Kings::GetInstance().getAttacksFrom(otherKing, _colors[otherColor]) |
+        Queens::GetInstance().getAttacksFrom(otherQueens, _colors[color], _colors[otherColor]) |
+        Bishops::GetInstance().getAttacksFrom(otherBishops, _colors[color], _colors[otherColor]) |
+        Rooks::GetInstance().getAttacksFrom(otherRooks, _colors[color], _colors[otherColor]) |
+        Knights::GetInstance().getAttacksFrom(otherKnights, _colors[otherColor]) |
+        Pawns::GetInstance().getAttacksFrom(otherPawns, _colors[color], otherColor);    
 }
 
 
@@ -185,7 +187,7 @@ BitBoard Board::getKingAttacks(Color color)
 
 BitBoard Board::getQueenAttacks(Color color)
 {
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     BitBoard queens = _pieces[Queen] & _colors[color];
     return Queens::GetInstance().getAttacksFrom(queens,
@@ -196,7 +198,7 @@ BitBoard Board::getQueenAttacks(Color color)
 
 BitBoard Board::getBishopAttacks(Color color)
 {
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     BitBoard bishops = _pieces[Bishop] & _colors[color];
     return Bishops::GetInstance().getAttacksFrom(bishops,
@@ -215,7 +217,7 @@ BitBoard Board::getKnightAttacks(Color color)
 
 BitBoard Board::getRookAttacks(Color color)
 {
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     BitBoard rooks = _pieces[Rook] & _colors[color];
     return Bishops::GetInstance().getAttacksFrom(rooks,
@@ -247,7 +249,7 @@ std::vector<Move> Board::getKingMoves(Color color)
 std::vector<Move> Board::getQueenMoves(Color color)
 {
     BitBoard movers = _pieces[Queen] & _colors[color];
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
@@ -263,7 +265,7 @@ std::vector<Move> Board::getQueenMoves(Color color)
 std::vector<Move> Board::getBishopMoves(Color color)
 {
     BitBoard movers = _pieces[Bishop] & _colors[color];
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
@@ -292,7 +294,7 @@ std::vector<Move> Board::getKnightMoves(Color color)
 std::vector<Move> Board::getRookMoves(Color color)
 {
     BitBoard movers = _pieces[Rook] & _colors[color];
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
@@ -308,7 +310,7 @@ std::vector<Move> Board::getRookMoves(Color color)
 std::vector<Move> Board::getPawnMoves(Color color)
 {
     BitBoard movers = _pieces[Pawn] & _colors[color];
-    Color otherColor = Color(abs(color - 1));
+    Color otherColor = Color(1 - color);
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
@@ -323,7 +325,8 @@ std::vector<Move> Board::getPawnMoves(Color color)
 
 bool Board::inCheck(Color color)
 {
-    return (getUnsafe(color) & _pieces[King] & _colors[color]);
+    BitBoard unsafe = getUnsafe(color);
+    return (unsafe & _pieces[King] & _colors[color]);
 }
 
 
@@ -344,13 +347,17 @@ std::vector<Move> Board::getMoves(Color color)
     result.insert(result.end(), rooks.begin(), rooks.end());
     result.insert(result.end(), pawns.begin(), pawns.end());
 
-    std::remove_if(
-        result.begin(), 
-        result.end(), 
-        [this, color] (Move& move) -> bool
-        {
-            return this->applyMove(move).inCheck(color);                
-        });
+    result.erase(
+        std::remove_if(
+            result.begin(), 
+            result.end(), 
+            [this, color] (Move& move) -> bool
+            {
+                Board b = this->applyMove(move);
+                bool bad = b.inCheck(color);
+                return bad;
+            }),
+        result.end());
 
     return result;
 }
@@ -372,16 +379,13 @@ Board Board::initial()
 }
 
 
-#include <fstream>
-
-Board Board::parse(char* filename)
+Board Board::parse(std::istream& inFile)
 {
     Board result;
     char buffer;
     Color color;
     Piece piece;
 
-    std::ifstream inFile(filename);
     for (int i = 0; i < 64 && inFile.good(); ++i)
     {
         inFile >> buffer;
@@ -393,6 +397,16 @@ Board Board::parse(char* filename)
         }
     }
     
+    return result;    
+}
+
+Board Board::parse(char* filename)
+{
+    Board result;
+
+    std::ifstream inFile(filename);
+    result = parse(inFile);
+    inFile.close();
     return result;
 }
 
@@ -510,7 +524,6 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
     return lhs;
 }
 
-
 /* white              black
  * 0000 0000 = 0x00   1111 1111 = 0xFF
  * 0000 0000 = 0x00   1111 1111 = 0xFF
@@ -552,3 +565,5 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
  * 0001 0000 = 0x10   0000 1000 = 0x08
 
  */
+
+}

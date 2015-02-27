@@ -4,6 +4,9 @@
 #include <array>
 #include "Board.h"
 
+namespace BixNix
+{
+
 class Knights
 {
 public:
@@ -18,5 +21,8 @@ protected:
     BitBoard generateAttacksFrom(Square index);
     std::array<BitBoard, 64> _attacks;
 };
+
+}
+
 
 #endif // _KNIGHTS_H_

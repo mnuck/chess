@@ -4,6 +4,9 @@
 #include "BitBoard.h"
 #include "Board.h"
 
+namespace BixNix
+{
+
 class Rooks
 {
 public:
@@ -16,5 +19,7 @@ public:
 protected:
     Rooks();
 };
+
+}
 
 #endif // _ROOKS_H_

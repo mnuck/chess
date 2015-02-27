@@ -4,6 +4,9 @@
 #include "BitBoard.h"
 #include "Board.h"
 
+namespace BixNix
+{
+
 class Queens
 {
 public:
@@ -16,5 +19,7 @@ public:
 protected:
     Queens();
 };
+
+}
 
 #endif // _QUEENS_H_

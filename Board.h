@@ -14,6 +14,9 @@
 #include "Enums.h"
 #include "Move.h"
 
+namespace BixNix
+{
+
 class Board
 {
 public:
@@ -30,6 +33,7 @@ public:
 
     static Board initial();
     static Board parse(char* filename);
+    static Board parse(std::istream& inFile);
     
 private:
     BitBoard getUnsafe(Color color);
@@ -56,5 +60,7 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
+
+}
 
 #endif // __BOARD_H__

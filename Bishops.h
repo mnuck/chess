@@ -3,6 +3,9 @@
 
 #include "BitBoard.h"
 
+namespace BixNix
+{
+
 class Bishops
 {
 public:
@@ -15,5 +18,7 @@ public:
 protected:
     Bishops();
 };
+
+}
 
 #endif // _BISHOPS_H_

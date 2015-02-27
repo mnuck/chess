@@ -2,6 +2,9 @@
 #include "Board.h"
 #include "Pawns.h"
 
+namespace BixNix
+{
+
 Pawns& Pawns::GetInstance()
 {
     static Pawns instance;
@@ -70,4 +73,6 @@ BitBoard Pawns::getMovesFrom(BitBoard pawns,
 	}
 
     return oneStep | twoStep;
+}
+
 }

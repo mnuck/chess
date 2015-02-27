@@ -2,6 +2,9 @@
 #include "Board.h"
 #include "Rooks.h"
 
+namespace BixNix
+{
+
 Rooks& Rooks::GetInstance()
 {
     static Rooks instance;
@@ -37,4 +40,6 @@ BitBoard Rooks::getAttacksFrom(BitBoard rooks,
     attacks &= ~friendlies;
 
     return attacks;
+}
+
 }

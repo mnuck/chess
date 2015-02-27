@@ -11,13 +11,14 @@ all: chess
 default: chess
 
 test: chess
-	./chess test.board
+	./chess --test
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 chess: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@
+	ar cr BixNix.a Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o
 
 clean:
 	-@rm -f core >/dev/null 2>&1

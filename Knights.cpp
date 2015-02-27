@@ -1,6 +1,9 @@
 #include "BitBoard.h"
 #include "Knights.h"
 
+namespace BixNix
+{
+
 Knights& Knights::GetInstance()
 {
     static Knights instance;
@@ -54,4 +57,6 @@ BitBoard Knights::getAttacksFrom(BitBoard attackers, BitBoard obstructions)
     BitBoard h2 = left2 | right2;
     BitBoard attacks = (h1 << 16) | (h1 >> 16) | (h2 << 8) | (h2 >> 8);
     return attacks & ~obstructions;
+}
+
 }

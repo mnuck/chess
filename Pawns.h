@@ -4,6 +4,9 @@
 #include "BitBoard.h"
 #include "Board.h"
 
+namespace BixNix
+{
+
 class Pawns
 {
 public:
@@ -19,5 +22,7 @@ public:
 protected:
     Pawns();
 };
+
+}
 
 #endif // _PAWNS_H_

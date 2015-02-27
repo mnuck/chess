@@ -1,5 +1,8 @@
 #include "Bishops.h"
 
+namespace BixNix
+{
+
 Bishops& Bishops::GetInstance()
 {
     static Bishops instance;
@@ -34,4 +37,6 @@ BitBoard Bishops::getAttacksFrom(BitBoard bishops,
     attacks &= ~friendlies;
 
     return attacks;
+}
+
 }

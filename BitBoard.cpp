@@ -2,6 +2,10 @@
 
 #include "BitBoard.h"
 
+namespace BixNix
+{
+
+
 std::ostream& operator<<(std::ostream& lhs, const BitBoard& rhs)
 {
     lhs << std::bitset<8>(rhs >> 56) << std::endl;
@@ -156,4 +160,6 @@ BitBoard shiftW(BitBoard source)
 BitBoard shiftNW(BitBoard source)
 {
     return (source & notAFile) << 9;
+}
+
 }

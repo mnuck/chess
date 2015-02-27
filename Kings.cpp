@@ -2,6 +2,9 @@
 #include "Board.h"
 #include "Kings.h"
 
+namespace BixNix
+{
+
 Kings& Kings::GetInstance()
 {
     static Kings instance;
@@ -47,4 +50,6 @@ BitBoard Kings::getAttacksFrom(BitBoard king,
 {
     int kingSquare = __builtin_ffsll(king) - 1;    
     return _attacks[kingSquare] & ~obstructions;
+}
+
 }

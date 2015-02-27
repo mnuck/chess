@@ -4,6 +4,9 @@
 #include "Rooks.h"
 #include "Bishops.h"
 
+namespace BixNix
+{
+
 Queens& Queens::GetInstance()
 {
     static Queens instance;
@@ -30,4 +33,6 @@ BitBoard Queens::getAttacksFrom(const BitBoard& queens,
     return 
         Bishops::GetInstance().getAttacksFrom(queens, targets, friendlies) |
         Rooks::GetInstance().getAttacksFrom(queens, targets, friendlies);
+}
+
 }

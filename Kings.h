@@ -4,6 +4,9 @@
 #include "BitBoard.h"
 #include "Board.h"
 
+namespace BixNix
+{
+
 class Kings
 {
 public:
@@ -17,5 +20,7 @@ protected:
     std::array<BitBoard, 64> _attacks;
 
 };
+
+}
 
 #endif // _KINGS_H_
