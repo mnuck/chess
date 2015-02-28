@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
     }
     
 
-    BixNix::Board board = BixNix::Board::parse("tests/WhiteCanCastleQueenside");
+    BixNix::Board board = BixNix::Board::parse("tests/WhiteCanEnPassant");
     std::cout << board << std::endl;
-    board = board.applyMove(BixNix::Move(3, 5));
+    board = board.applyMove(BixNix::Move(36, 43));
     std::cout << board << std::endl;
     
 

@@ -6,12 +6,12 @@ namespace BixNix
 
 enum Piece
 {
-    Pawn,
-    Rook,
     Knight,
+    Rook,
     Bishop,
     Queen,
-    King
+    King,
+    Pawn
 };
 
 enum Color

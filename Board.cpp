@@ -46,6 +46,30 @@ Board Board::applyMove(Move move)
     const BitBoard source = (1LL << move.getSource());
     const BitBoard target = (1LL << move.getTarget());
 
+    // en passant check
+    if ((source & result._pieces[Pawn]) != 0LL)
+    {  // a pawn moved
+        int diff = move.getSource() - move.getTarget();
+        if (diff % 2 != 0)
+        { // a pawn moved diagonally
+            BitBoard allPieces = result._colors[White] | result._colors[Black];
+            if ((target & allPieces) == 0LL)
+            {  // a pawn attacked an empty square (en passant occured)
+                BitBoard realTarget;
+                if ((target & 0x0000FF0000000000) != 0LL)
+                {  // white attacker
+                    realTarget = target >> 8;
+                    result._pieces[Pawn]  &= ~realTarget;
+                    result._colors[Black] &= ~realTarget;                    
+                } else {
+                    realTarget = target << 8;
+                    result._pieces[Pawn]  &= ~realTarget;
+                    result._colors[White] &= ~realTarget;                    
+                }
+            }
+        }
+    }
+
     for (size_t i = 0; i < 6; ++i)
     {
         if (result._pieces[i] & source)
@@ -178,62 +202,6 @@ std::vector<Move> Board::getMoves(BitBoard movers, std::function<BitBoard (BitBo
 }
 
 
-BitBoard Board::getKingAttacks(Color color)
-{    
-    BitBoard king = _pieces[King] & _colors[color];
-    return Kings::GetInstance().getAttacksFrom(king, _colors[color]);
-}
-
-
-BitBoard Board::getQueenAttacks(Color color)
-{
-    Color otherColor = Color(1 - color);
-
-    BitBoard queens = _pieces[Queen] & _colors[color];
-    return Queens::GetInstance().getAttacksFrom(queens,
-                                                _colors[color],
-                                                _colors[otherColor]);
-}
-
-
-BitBoard Board::getBishopAttacks(Color color)
-{
-    Color otherColor = Color(1 - color);
-
-    BitBoard bishops = _pieces[Bishop] & _colors[color];
-    return Bishops::GetInstance().getAttacksFrom(bishops,
-                                                _colors[color],
-                                                _colors[otherColor]);
-}
-
-
-BitBoard Board::getKnightAttacks(Color color)
-{
-    BitBoard knights = _pieces[Knight] & _colors[color];
-    BitBoard obstructions = _colors[color];
-    return Knights::GetInstance().getAttacksFrom(knights, obstructions);    
-}
-
-
-BitBoard Board::getRookAttacks(Color color)
-{
-    Color otherColor = Color(1 - color);
-
-    BitBoard rooks = _pieces[Rook] & _colors[color];
-    return Bishops::GetInstance().getAttacksFrom(rooks,
-                                                _colors[color],
-                                                _colors[otherColor]);
-}
-
-
-BitBoard Board::getPawnAttacks(Color color)
-{
-    BitBoard attackers = _pieces[Pawn] & _colors[color];
-    BitBoard targets = _colors[1 - color];
-    return Pawns::GetInstance().getAttacksFrom(attackers, targets, color);
-}    
-
-
 std::vector<Move> Board::getKingMoves(Color color)
 {
     BitBoard movers = _pieces[King] & _colors[color];
@@ -311,11 +279,43 @@ std::vector<Move> Board::getPawnMoves(Color color)
 {
     BitBoard movers = _pieces[Pawn] & _colors[color];
     Color otherColor = Color(1 - color);
+    BitBoard targets = _colors[otherColor];
+
+    // en passant handling
+    if (_moves.size() > 0)
+    {
+        BitBoard mover = 1LL << _moves[_moves.size() - 1].getTarget();
+        if ((mover & _pieces[Pawn] & _colors[1 - color]) != 0LL)
+        {  // a pawn moved
+            BitBoard moverSource = 1LL << _moves[_moves.size() - 1].getSource();
+            BitBoard pseudoMover = 0LL;
+            if (White == color)
+            {
+                if (((moverSource & 0x00FF000000000000) != 0LL) &&
+                    ((mover       & 0x000000FF00000000) != 0LL))
+                {  // pawn did a double push
+                    pseudoMover = mover << 8;
+                }
+            } else {
+                if (((moverSource & 0x000000000000FF00) != 0LL) &&
+                    ((mover       & 0x00000000FF000000) != 0LL))
+                {
+                    pseudoMover = mover >> 8;
+                }
+                
+            }
+            if (pseudoMover != 0LL)
+            {
+                targets &= ~mover;
+                targets |= pseudoMover;
+            }            
+        }
+    }
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
         return 
-            Pawns::GetInstance().getAttacksFrom(mover, _colors[otherColor], color) |
+            Pawns::GetInstance().getAttacksFrom(mover, targets, color) |
             Pawns::GetInstance().getMovesFrom(mover, _colors[color] | _colors[otherColor], color);
     };    
 
@@ -413,7 +413,7 @@ std::vector<Move> Board::getMoves(Color color)
             result.end(), 
             [this, color] (Move& move) -> bool
             {
-                Board b = this->applyMove(move);
+                Board b = applyMove(move);
                 bool bad = b.inCheck(color);
                 return bad;
             }),
@@ -455,6 +455,17 @@ Board Board::parse(std::istream& inFile)
             result._pieces[piece] |= mask;
             result._colors[color] |= mask;
         }
+    }
+
+    size_t moveCount;
+    inFile >> moveCount;
+    for (size_t i = 0; i < moveCount; ++i)
+    {
+        int source;
+        int target;
+        inFile >> source;
+        inFile >> target;
+        result._moves.push_back(Move(source, target));
     }
     
     return result;    

@@ -60,6 +60,8 @@ bool test()
             testFile >> source >> target;
             blackTrueMoves.push_back(BixNix::Move(source, target));            
         }
+
+        
         testFile.close();        
 
         std::vector<BixNix::Move> whiteGeneratedMoves = board.getMoves(BixNix::White);

@@ -37,12 +37,6 @@ public:
     
 private:
     BitBoard getUnsafe(Color color);
-    BitBoard getKingAttacks(Color color);
-    BitBoard getQueenAttacks(Color color);
-    BitBoard getBishopAttacks(Color color);
-    BitBoard getKnightAttacks(Color color);
-    BitBoard getRookAttacks(Color color);
-    BitBoard getPawnAttacks(Color color);
 
     std::vector<Move> getKingMoves(Color color);
     std::vector<Move> getQueenMoves(Color color);
