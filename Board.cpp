@@ -32,6 +32,7 @@ Board& Board::operator=(const Board& that)
 {
     _pieces = that._pieces;
     _colors = that._colors;
+    _moves  = that._moves;
     return *this;
 }
 
@@ -42,6 +43,8 @@ Board::~Board() {}
 Board Board::applyMove(Move move)
 {
     Board result = *this;
+
+    result._moves.push_back(move);
 
     const BitBoard source = (1LL << move.getSource());
     const BitBoard target = (1LL << move.getTarget());
@@ -195,6 +198,15 @@ std::vector<Move> Board::getMoves(BitBoard movers, std::function<BitBoard (BitBo
             Square target = __builtin_ffsll(targets) - 1;
             targets &= ~(1LL << target);
             result.push_back(Move(source, target));
+
+            BitBoard targetBoard = 1LL << target;
+            if (((sourceBoard & _pieces[Pawn]) != 0LL) &&
+                ((targetBoard & 0xFF000000000000FF) != 0LL))
+            {
+                result.push_back(Move(source, target, Bishop));
+                result.push_back(Move(source, target, Rook));
+                result.push_back(Move(source, target, Knight));
+            }
         }
     }
 
@@ -463,9 +475,26 @@ Board Board::parse(std::istream& inFile)
     {
         int source;
         int target;
+        char promotion;
         inFile >> source;
         inFile >> target;
-        result._moves.push_back(Move(source, target));
+        inFile >> promotion;
+        switch (promotion)
+        {
+        case 'B':
+            result._moves.push_back(Move(source, target, Bishop));
+            break;
+        case 'N':
+            result._moves.push_back(Move(source, target, Knight));
+            break;
+        case 'R':
+            result._moves.push_back(Move(source, target, Rook));
+            break;
+        case 'Q':
+        default:
+            result._moves.push_back(Move(source, target, Queen));
+            break;
+        }
     }
     
     return result;    
