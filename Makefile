@@ -6,9 +6,9 @@ HEADERS = $(wildcard *.h *.hpp)
 
 OBJECTS = $(SOURCES:%.cpp=%.o)
 
-all: chess
+all: chess library
 
-default: chess
+default: chess library
 
 test: chess
 	./chess --test
@@ -16,13 +16,16 @@ test: chess
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+library: Engine.o Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o
+	ar cr BixNix.a Engine.o Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o
+
 chess: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@
-	ar cr BixNix.a Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o
 
 clean:
 	-@rm -f core >/dev/null 2>&1
 	-@rm -f chess >/dev/null 2>&1
+	-@rm -f BixNix.a >/dev/null 2>&1
 	-@rm -f $(OBJECTS) >/dev/null 2>&1
 
 check-syntax:

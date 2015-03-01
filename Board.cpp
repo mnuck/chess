@@ -24,7 +24,8 @@ Board::Board()
 Board::Board(const Board& that)
 {
     _pieces = that._pieces;
-    _colors = that._colors;    
+    _colors = that._colors;
+    _moves = that._moves;
 }
 
 
@@ -621,6 +622,12 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
             lhs << "\n";
         }
     }
+
+    for (const Move& m : rhs._moves)
+    {
+        lhs << m << "\n";
+    }
+
     return lhs;
 }
 
