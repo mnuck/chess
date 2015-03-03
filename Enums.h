@@ -20,6 +20,14 @@ enum Color
     Black
 };
 
+
+enum MinimaxPlayer
+{
+    Min,
+    Max
+};
+
+
 }
 
 #endif // __ENUMS_H__

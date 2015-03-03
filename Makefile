@@ -1,4 +1,4 @@
-CXX = g++
+CXX = clang++-3.5
 CXXFLAGS = -O3 -Wall -W -pedantic-errors -std=c++11 -msse4.2
 
 SOURCES = $(wildcard *.cpp)

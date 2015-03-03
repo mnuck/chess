@@ -5,6 +5,9 @@
 #ifndef __ENGINE_H__
 #define __ENGINE_H__
 
+#include <chrono>
+#include <thread>
+
 #include "Enums.h"
 #include "Board.h"
 
@@ -26,9 +29,33 @@ public:
     Move getMove();
 
 private:
+    float heuristic(Board& board);
+    float minimax(Board& board,
+                  const Color& toMove,
+                  const unsigned int depthLimit=2,
+                  const MinimaxPlayer player=Max,
+                  const unsigned int depth=1,
+                  float alpha=-100000,
+                  float beta=100000);
+
+    void ponder();
+
+    void trimTrifoldRepetition(Board& board, std::vector<Move>& moves);
+
     Board _board;
     Color _color;
     float _time;
+
+    std::thread* _ponderer;
+    bool _ponderer_done;
+    bool _ponderer_needs_new_board;
+    Move _ponderer_best_move;
+    bool _ponderer_best_move_ready;
+
+    unsigned long long _heuristic_runs;
+    std::chrono::time_point<std::chrono::system_clock> _start_time;
+    
+
 };
 
 }

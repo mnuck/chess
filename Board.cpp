@@ -46,6 +46,7 @@ Board Board::applyMove(Move move)
     Board result = *this;
 
     result._moves.push_back(move);
+    result._toMove = Color(1 - _toMove);
 
     const BitBoard source = (1LL << move.getSource());
     const BitBoard target = (1LL << move.getTarget());
@@ -164,9 +165,9 @@ bool Board::good()
 }
 
 
-BitBoard Board::getUnsafe(Color color)
+BitBoard Board::getUnsafe(Color color) const
 {
-    Color otherColor = Color(1 - color);
+    const Color otherColor = Color(1 - color);
 
     BitBoard otherKing = _pieces[King] & _colors[otherColor];
     BitBoard otherQueens = _pieces[Queen] & _colors[otherColor];
@@ -392,18 +393,34 @@ std::vector<Move> Board::getCastlingMoves(Color color)
     
     return result;
 }
-    
 
-bool Board::inCheck(Color color)
+
+bool Board::inCheck(Color color) const
 {
     BitBoard unsafe = getUnsafe(color);
     return (unsafe & _pieces[King] & _colors[color]);
 }
 
 
-std::vector<Move> Board::getMoves(Color color)
+bool Board::inCheckmate(const Color color)
+{
+    BitBoard unsafe = getUnsafe(color);
+    if (unsafe & _pieces[King] & _colors[color])
+    {
+        auto moves = getMoves(color, false);
+        if (moves.size() == 0)
+            return true;
+    }
+    return false;
+}
+
+
+std::vector<Move> Board::getMoves(const Color color, bool checkCheckmate)
 {
     std::vector<Move> result;
+    if (checkCheckmate && inCheckmate(color))
+        return result;
+
     std::vector<Move> kings = getKingMoves(color);
     std::vector<Move> queens = getQueenMoves(color);
     std::vector<Move> bishops = getBishopMoves(color);
@@ -447,7 +464,7 @@ Board Board::initial()
     result._pieces[King]   = 0x0800000000000008;
     result._colors[Black]   = 0xFFFF000000000000;
     result._colors[White]   = 0x000000000000FFFF;
-
+    result._toMove = White;
     return result;
 }
 

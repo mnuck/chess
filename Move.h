@@ -13,7 +13,6 @@ class Move
 {
     friend std::ostream& operator<<(std::ostream& lhs, const Move& rhs);
 
-
 public:
     Move(Square source, Square target, Piece piece=Queen): 
     _source(source), _target(target), _piece(piece) {}
@@ -26,6 +25,8 @@ public:
     Piece  getPiece()  const { return _piece; }
 
     bool operator==(const Move& rhs);
+
+    float score;
 
 private:
     Square _source;

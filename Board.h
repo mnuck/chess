@@ -21,13 +21,14 @@ class Board
 {
 public:
     friend std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
+    friend class Engine;
 
     Board();
     Board(const Board& that);
     Board& operator=(const Board& that);
     ~Board();
 
-    std::vector<Move> getMoves(Color color);
+    std::vector<Move> getMoves(const Color color, bool checkCheckmate=true);
     Board applyMove(Move move);
     bool good();
 
@@ -36,7 +37,7 @@ public:
     static Board parse(std::istream& inFile);
     
 private:
-    BitBoard getUnsafe(Color color);
+    BitBoard getUnsafe(Color color) const;
 
     std::vector<Move> getKingMoves(Color color);
     std::vector<Move> getQueenMoves(Color color);
@@ -47,12 +48,15 @@ private:
     std::vector<Move> getCastlingMoves(Color color);
 
     std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator);
-    bool inCheck(Color color);
+    bool inCheck(Color color) const;
+    bool inCheckmate(const Color color);
+
     static bool parse(const char square, Color& color, Piece& piece);
 
     std::array<BitBoard, 6> _pieces;
     std::array<BitBoard, 2> _colors;
     std::vector<Move> _moves;
+    Color _toMove;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
