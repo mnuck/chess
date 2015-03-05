@@ -4,6 +4,12 @@
 namespace BixNix
 {
 
+typedef uint64_t BitBoard;
+typedef uint64_t ZobristNumber;
+
+typedef uint8_t Square;
+
+
 enum Piece
 {
     Knight,

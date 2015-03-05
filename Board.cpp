@@ -10,6 +10,7 @@
 #include "Pawns.h"
 #include "Queens.h"
 #include "Rooks.h"
+#include "Zobrist.h"
 
 namespace BixNix
 {
@@ -18,14 +19,18 @@ Board::Board()
 {
     _pieces.fill(0LL);
     _colors.fill(0LL);
+    _moves.reserve(50);
 }
 
 
-Board::Board(const Board& that)
+Board::Board(const Board& that):
+    _pieces(that._pieces),
+    _colors(that._colors),
+    _moves(that._moves),
+    _toMove(that._toMove),
+    _hash(that._hash)
 {
-    _pieces = that._pieces;
-    _colors = that._colors;
-    _moves = that._moves;
+    
 }
 
 
@@ -34,6 +39,8 @@ Board& Board::operator=(const Board& that)
     _pieces = that._pieces;
     _colors = that._colors;
     _moves  = that._moves;
+    _toMove = that._toMove;
+    _hash = that._hash;
     return *this;
 }
 
@@ -43,10 +50,11 @@ Board::~Board() {}
 
 Board Board::applyMove(Move move)
 {
-    Board result = *this;
+    Board result(*this);
 
     result._moves.push_back(move);
     result._toMove = Color(1 - _toMove);
+    result._hash ^= Zobrist::GetInstance().getBlackToMove();
 
     const BitBoard source = (1LL << move.getSource());
     const BitBoard target = (1LL << move.getTarget());
@@ -75,31 +83,42 @@ Board Board::applyMove(Move move)
         }
     }
 
+
+    Piece movingPiece;
+    Piece capturedPiece;
+    
     for (size_t i = 0; i < 6; ++i)
     {
         if (result._pieces[i] & source)
         {
+            movingPiece = Piece(i);
+            capturedPiece = movingPiece;
             result._pieces[i] &= ~source;
             result._pieces[i] |= target;
             continue;
         }
         if (result._pieces[i] & target)
         {
+            capturedPiece = Piece(i);
             result._pieces[i] &= ~target;
             continue;
         }
     }
 
+
     for (size_t i = 0; i < 2; ++i)
     {
         if (result._colors[i] & source)
         {
+            result._hash ^= Zobrist::GetInstance().getZobrist(Color(i), movingPiece, move.getSource());
+            result._hash ^= Zobrist::GetInstance().getZobrist(Color(i), movingPiece, move.getTarget());
             result._colors[i] &= ~source;
             result._colors[i] |= target;
             continue;
         } 
         if (result._colors[i] & target)
-        {
+        {            
+            result._hash ^= Zobrist::GetInstance().getZobrist(Color(i), capturedPiece, move.getTarget());
             result._colors[i] &= ~target;
             continue;
         }
@@ -110,6 +129,14 @@ Board Board::applyMove(Move move)
     {
         result._pieces[Pawn] &= ~target;
         result._pieces[move.getPiece()] |= target;
+        if (result._colors[White] & target)
+        {
+            result._hash ^= Zobrist::GetInstance().getZobrist(White, Pawn, move.getTarget());
+            result._hash ^= Zobrist::GetInstance().getZobrist(White, move.getPiece(), move.getTarget());
+        } else {
+            result._hash ^= Zobrist::GetInstance().getZobrist(Black, Pawn, move.getTarget());
+            result._hash ^= Zobrist::GetInstance().getZobrist(Black, move.getPiece(), move.getTarget());
+        }
     }
 
     // castling
@@ -119,6 +146,10 @@ Board Board::applyMove(Move move)
         {
             if (result._colors[White] & target)
             {
+                result._hash ^= Zobrist::GetInstance().getWKCastle();
+                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(0));
+                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(2));                
+
                 result._pieces[Rook] &=  0xFFFFFFFFFFFFFFFELL;
                 result._colors[White] &= 0xFFFFFFFFFFFFFFFELL;
                 result._pieces[Rook] |=  0x0000000000000004LL;
@@ -126,6 +157,10 @@ Board Board::applyMove(Move move)
             } 
             else 
             {
+                result._hash ^= Zobrist::GetInstance().getBKCastle();
+                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(56));
+                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(58));                
+
                 result._pieces[Rook] &=  0xFEFFFFFFFFFFFFFFLL;
                 result._colors[Black] &= 0xFEFFFFFFFFFFFFFFLL;
                 result._pieces[Rook] |=  0x0400000000000000LL;
@@ -136,6 +171,10 @@ Board Board::applyMove(Move move)
         {
             if (result._colors[White] & target)
             {
+                result._hash ^= Zobrist::GetInstance().getWQCastle();
+                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(7));
+                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(4));
+
                 result._pieces[Rook] &=  0xFFFFFFFFFFFFFF7FLL;
                 result._colors[White] &= 0xFFFFFFFFFFFFFF7FLL;
                 result._pieces[Rook] |=  0x0000000000000010LL;
@@ -143,6 +182,10 @@ Board Board::applyMove(Move move)
             }
             else
             {
+                result._hash ^= Zobrist::GetInstance().getBKCastle();
+                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(63));
+                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(60));
+
                 result._pieces[Rook] &=  0x7FFFFFFFFFFFFFFFLL;
                 result._colors[Black] &= 0x7FFFFFFFFFFFFFFFLL;
                 result._pieces[Rook] |=  0x1000000000000000LL;
@@ -418,16 +461,17 @@ bool Board::inCheckmate(const Color color)
 std::vector<Move> Board::getMoves(const Color color, bool checkCheckmate)
 {
     std::vector<Move> result;
+    result.reserve(100);
     if (checkCheckmate && inCheckmate(color))
         return result;
 
-    std::vector<Move> kings = getKingMoves(color);
-    std::vector<Move> queens = getQueenMoves(color);
-    std::vector<Move> bishops = getBishopMoves(color);
-    std::vector<Move> knights = getKnightMoves(color);
-    std::vector<Move> rooks = getRookMoves(color);
-    std::vector<Move> pawns = getPawnMoves(color);
-    std::vector<Move> castles = getCastlingMoves(color);
+    std::vector<Move> kings(getKingMoves(color));
+    std::vector<Move> queens(getQueenMoves(color));
+    std::vector<Move> bishops(getBishopMoves(color));
+    std::vector<Move> knights(getKnightMoves(color));
+    std::vector<Move> rooks(getRookMoves(color));
+    std::vector<Move> pawns(getPawnMoves(color));
+    std::vector<Move> castles(getCastlingMoves(color));
 
     result.insert(result.end(), kings.begin(), kings.end());
     result.insert(result.end(), queens.begin(), queens.end());
@@ -465,6 +509,9 @@ Board Board::initial()
     result._colors[Black]   = 0xFFFF000000000000;
     result._colors[White]   = 0x000000000000FFFF;
     result._toMove = White;
+
+    result._hash = 0LL;
+    
     return result;
 }
 

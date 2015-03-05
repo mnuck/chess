@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <iostream>
 
+#include "Enums.h"
+
 namespace BixNix
 {
 
-typedef uint64_t BitBoard;
-typedef uint8_t Square;
 
 std::ostream& operator<<(std::ostream& lhs, const BitBoard& rhs);
 

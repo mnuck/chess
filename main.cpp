@@ -46,11 +46,20 @@ int main(int argc, char* argv[])
     }
     
 
-    BixNix::Board board = BixNix::Board::parse("tests/WhiteCanEnPassant");
-    std::cout << board << std::endl;
-    board = board.applyMove(BixNix::Move(36, 43));
-    std::cout << board << std::endl;
+    BixNix::Board a = BixNix::Board::initial();
+    a = a.applyMove(BixNix::Move(9, 25));
+    a = a.applyMove(BixNix::Move(49, 33));
+
+    BixNix::Board b = BixNix::Board::initial();
+    b = b.applyMove(BixNix::Move(9, 17));
+    b = b.applyMove(BixNix::Move(49, 41));
+    b = b.applyMove(BixNix::Move(17, 25));
+    b = b.applyMove(BixNix::Move(41, 33));
+
+    std::cout << a.getHash() << std::endl;
+    std::cout << b.getHash() << std::endl;
     
+
 
     //std::random_device rd;
     //std::default_random_engine el(rd());

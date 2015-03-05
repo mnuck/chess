@@ -30,6 +30,8 @@ public:
 
     std::vector<Move> getMoves(const Color color, bool checkCheckmate=true);
     Board applyMove(Move move);
+
+    ZobristNumber getHash() { return _hash; }
     bool good();
 
     static Board initial();
@@ -57,6 +59,7 @@ private:
     std::array<BitBoard, 2> _colors;
     std::vector<Move> _moves;
     Color _toMove;
+    ZobristNumber _hash;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
