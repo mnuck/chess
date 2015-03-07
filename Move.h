@@ -24,9 +24,9 @@ public:
     Square getTarget() const { return _target; }
     Piece  getPiece()  const { return _piece; }
 
-    bool operator==(const Move& rhs);
+    bool operator==(const Move& rhs) const;
 
-    float score;
+    int score;
 
 private:
     Square _source;

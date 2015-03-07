@@ -6,47 +6,11 @@
 #include <vector>
 
 #include "Engine.h"
+#include "Evaluate.h"
 
 namespace BixNix
 {
 
-Engine::Engine():
-    _ponderer(nullptr),
-    _ponderer_best_move(Move(0,0)),
-    _cache_hits(0),
-    _cache_misses(0),
-    _tTable(nullptr)
-{
-    _tTable = new TranspositionNode[TTABLE_SIZE];
-}
-
-Engine::~Engine()
-{
-    if (nullptr == _tTable)
-    {
-        delete [] _tTable;
-        _tTable = nullptr;
-    }
-}
-
-void Engine::init(Color color)
-{
-    _heuristic_runs = 0;
-    _start_time = std::chrono::system_clock::now();
-
-    if (_ponderer == nullptr)
-    {
-        srand(time(NULL));
-
-        _board = Board::initial();
-        _color = color;
-
-        _ponderer_done = false;
-        _ponderer_needs_new_board = true;
-        _ponderer = new std::thread(&Engine::ponder, this);
-        
-    }
-}
 
 void Engine::end() 
 {
@@ -57,9 +21,19 @@ void Engine::end()
     std::cout << _heuristic_runs << " heuristic runs" << std::endl
               << diff.count() << " seconds" << std::endl
               << _heuristic_runs / diff.count() << " runs per sec" << std::endl;
-    std::cout << _cache_hits << " cache hits\n"
+    std::cout << _cache_collisions << " cache collisions\n"
+              << _cache_hits << " cache hits\n"
               << _cache_misses << " cache misses\n"
-              << _cache_hits / static_cast<double>(_cache_hits + _cache_misses) << " ratio" << std::endl;
+              << _cache_hits / static_cast<double>(_cache_hits + _cache_misses) 
+              << " ratio" << std::endl;
+
+    unsigned long long occupied = 0;
+    for (size_t i = 0; i < TTABLE_SIZE; ++i)
+        if (_tTable[i]._hash != 0xFFFFFFFFFFFFFFFFLL)
+            ++occupied;
+    std::cout << occupied << " cache slots occupied\n"
+              << TTABLE_SIZE << " cache slots total\n"
+              << occupied / static_cast<double>(TTABLE_SIZE) << " occupancy" << std::endl;
 
     _ponderer_done = true;
     if (_ponderer != nullptr)
@@ -71,70 +45,6 @@ void Engine::end()
         delete _ponderer;
         _ponderer = nullptr;
     }
-}
-
-void Engine::ponder()
-{
-    Board ponderBoard;
-    while (!_ponderer_done)
-    {
-        if (_ponderer_needs_new_board)
-        {
-            ponderBoard = _board;
-            _ponderer_needs_new_board = false;
-        }
-        
-        std::vector<Move> potentialMoves(ponderBoard.getMoves(_color));
-        trimTrifoldRepetition(ponderBoard, potentialMoves);
-
-        float maxScore;
-        unsigned int depth = 0;
-        while (!_ponderer_done)
-        {
-            if (depth > 50)
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            
-            if (_ponderer_needs_new_board)
-                break;
-            
-            maxScore = -100000;
-            for (Move& m: potentialMoves)
-            {
-                Board b(_board.applyMove(m));
-                m.score = minimax(b, Color(1 -_color), depth, Min);
-                if (m.score > maxScore)
-                    maxScore = m.score;
-                if (_ponderer_done)
-                    return;
-                if (_ponderer_needs_new_board)
-                    break;
-            }
-            if (_ponderer_needs_new_board)
-                break;
-            
-            std::sort(potentialMoves.begin(), potentialMoves.end(),
-                      [&](const Move& a, const Move& b) -> bool
-                      { return a.score > b.score; });
-
-            _ponderer_best_move = potentialMoves[0];
-            _cv_best_move_ready.notify_all();
-
-            ++depth;
-        }
-    }
-}
-
-
-void Engine::reportTimeLeft(float time)
-{
-    _time = time;
-}
-
-
-void Engine::reportMove(Move move)
-{
-    _board = _board.applyMove(move);
-    _ponderer_needs_new_board = true;
 }
 
 
@@ -175,167 +85,257 @@ Move Engine::getMove()
     }
 
     Move move = _ponderer_best_move;
-    std::cout << move << std::endl;
+    std::cout << "taking " << move << " ";
+    Board pvBoard(_board.applyMove(move));
+    TranspositionNode node(_tTable[pvBoard.getHash() % TTABLE_SIZE]);
+    int i = 0;
+    while (i++ < 10 && node._hash == pvBoard.getHash())
+    {
+        std::cout << node._move << " ";
+        pvBoard = pvBoard.applyMove(node._move);
+        node = _tTable[pvBoard.getHash() % TTABLE_SIZE];
+    }
+    std::cout << std::endl;
     _board = _board.applyMove(move);
     
     return move;
 }
 
 
-float Engine::minimax(Board& board, 
-                      const Color toMove,
-                      const unsigned int depth,
-                      const MinimaxPlayer player,
-                      float alpha,
-                      float beta)
+void Engine::ponder()
 {
-    if (_ponderer_done)
+    Board ponderBoard;
+    while (!_ponderer_done)
+    {
+        if (_ponderer_needs_new_board)
+        {
+            ponderBoard = _board;
+            _ponderer_needs_new_board = false;
+        }
+        
+        std::vector<Move> potentialMoves(ponderBoard.getMoves(_color));
+        trimTrifoldRepetition(ponderBoard, potentialMoves);
+
+        float maxScore;
+        unsigned int depth = 0;
+        while (!_ponderer_done)
+        {
+            if (depth > 50)
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            
+            if (_ponderer_needs_new_board)
+                break;
+            
+            maxScore = -100000;
+            for (Move& m: potentialMoves)
+            {
+                Board b(_board.applyMove(m));
+                m.score = -negamax(b, Color(1 - _color), depth);
+                if (m.score > maxScore)
+                    maxScore = m.score;
+                if (_ponderer_done)
+                    return;
+                if (_ponderer_needs_new_board)
+                    break;
+            }
+            if (_ponderer_needs_new_board)
+                break;
+            
+            std::sort(potentialMoves.begin(), potentialMoves.end(),
+                      [&](const Move& a, const Move& b) -> bool
+                      { return a.score > b.score; });
+
+            _ponderer_best_move = potentialMoves[0];
+            _cv_best_move_ready.notify_all();
+            
+            for (int i = potentialMoves.size() - 1; i >= 0; --i)
+                std::cout << "(" << potentialMoves[i].score << ") " << potentialMoves[i] << std::endl;
+
+            std::cout << "*** " << depth << " " << _ponderer_best_move.score << " " 
+                      << _ponderer_best_move << std::endl;
+
+
+            ++depth;
+        }
+    }
+}
+
+
+int Engine::negamax(const Board& board,
+                    const Color toMove,
+                    const unsigned int depth,
+                    int alpha,
+                    int beta)
+{
+    if (_ponderer_done || _ponderer_needs_new_board)
         return 0.0;
 
-    if (_ponderer_needs_new_board)
+/*
+    TranspositionNode& node = _tTable[board.getHash() % TTABLE_SIZE];
+    if (node._hash == board.getHash() &&
+        node._depth >= depth)
     {
-        return 0.0;
+        ++_cache_hits;
+        switch (node._evalType)
+        {
+        case TranspositionNode::Alpha:
+            alpha = std::max(alpha, node._score);
+            break;
+        case TranspositionNode::Beta:
+            beta = std::min(beta, node._score);
+            break;
+        case TranspositionNode::Actual:
+            return node._score;
+            break;
+        default:
+            break;
+        }
+        if (beta <= alpha)
+            return node._score;
     }
+    else
+        ++_cache_misses;
+*/
 
     if (0 == depth)
     {
-        return heuristic(board);
+        float value = heuristic(board);
+        return (toMove == _color) ? value : -value;        
     }
-
-    float result;
-    if (Max == player)
-        result = -100000;
-    else
-        result =  100000;
-
+    
     std::vector<Move> actions = board.getMoves(toMove);
     trimTrifoldRepetition(board, actions);
-
     if (actions.size() == 0)
     {
-        return heuristic(board);
+        float value = heuristic(board);
+        return (toMove == _color) ? value : -value;        
     }
 
+    // move ordering
     for (Move& m : actions)
     {
         Board b(board.applyMove(m));
-        TranspositionNode node = _tTable[b.getHash() % TTABLE_SIZE];
-        if (node._hash == b.getHash())
-            m.score = node._score;
-        else
-            m.score = heuristic(b);
+//        const TranspositionNode& bNode = _tTable[b.getHash() % TTABLE_SIZE];
+//        if (bNode._hash == b.getHash() && 
+//            TranspositionNode:: Actual == bNode._evalType)
+//        {
+//            m.score =  bNode._score;
+//        } else {
+            int value = heuristic(b);
+            m.score = (toMove == _color) ? value : -value;
+//        }
     }
 
-    if (Max == player)
+    std::sort(actions.begin(), actions.end(),
+              [&](const Move& a, const Move& b) -> bool
+              { return a.score > b.score; });
+
+    int result = -100000;
+    Move bestMove(actions[0]);
+    for (const Move& m: actions)
     {
-        std::sort(actions.begin(), actions.end(),
-                  [&](const Move& a, const Move& b) -> bool
-                  { return a.score > b.score; });
-    } else {
-        std::sort(actions.begin(), actions.end(),
-                  [&](const Move& a, const Move& b) -> bool
-                  { return a.score < b.score; });
-    }
+        Board b(board.applyMove(m));
+        int value = -negamax(b, Color(1 - toMove), depth - 1, -beta, -alpha);
+        if (_ponderer_done || _ponderer_needs_new_board)
+            return 0.0;        
 
-    for (Move& m : actions)
-    {
-        Board resultBoard(board.applyMove(m));
-        float value;
-        
-        size_t index = resultBoard.getHash() % TTABLE_SIZE;
-        
-        if (_tTable[index]._hash == resultBoard.getHash() && 
-            _tTable[index]._depth >= depth)
-        { // cache hit
-            ++_cache_hits;
-            value =  _tTable[index]._score;
-        } 
-        else 
+        result = std::max(result, value);
+        if (value > alpha)
         {
-            ++_cache_misses;
-            value = 
-                minimax(
-                    resultBoard,
-                    Color(1 - toMove),
-                    depth - 1,
-                    MinimaxPlayer(1 - player),
-                    alpha,
-                    beta);
-
-            if (_tTable[index]._hash != resultBoard.getHash() ||
-                _tTable[index]._depth < depth)
-            {
-                _tTable[index]._hash = resultBoard.getHash();
-                _tTable[index]._depth = depth;
-                _tTable[index]._score = value;
-            }
+            alpha = value;
+            bestMove = m;
         }
-
-        if (Max == player)
-        {
-            result = std::max(result, value);
-            alpha  = std::max(alpha, result);
-        } else {
-            result = std::min(result, value);
-            beta   = std::min(beta, result);
-        }
-        if (beta <= alpha)
-        {
+        if (result >= beta)
             break;
-        }        
     }
-    return result;    
+    
+    {
+        TranspositionNode& node = _tTable[board.getHash() % TTABLE_SIZE];
+        if (node._hash != 0xFFFFFFFFFFFFFFFFLL && node._hash != board.getHash())
+            ++_cache_collisions;
+
+        if (node._hash != board.getHash() ||
+            node._depth <= depth)
+        {
+            node._hash = board._hash;
+            node._depth = depth;
+            node._score = result;
+            node._move = bestMove;
+            if (result <= alpha)
+                node._evalType = TranspositionNode::Alpha;
+            else if (beta <= result)
+                node._evalType = TranspositionNode::Beta;
+            else
+                node._evalType = TranspositionNode::Actual;           
+        }
+    }    
+    
+    return result;
 }
 
 
-float Engine::heuristic(Board& board)
+Engine::Engine():
+    _ponderer(nullptr),
+    _ponderer_best_move(Move(0,0)),
+    _cache_hits(0),
+    _cache_misses(0),
+    _cache_collisions(0),
+    _tTable(nullptr)
+{
+    _tTable = new TranspositionNode[TTABLE_SIZE];
+    for (size_t i = 0; i < TTABLE_SIZE; ++i)
+        _tTable[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
+}
+
+Engine::~Engine()
+{
+    if (nullptr == _tTable)
+    {
+        delete [] _tTable;
+        _tTable = nullptr;
+    }
+}
+    
+void Engine::init(Color color)
+{
+    _heuristic_runs = 0;
+    _start_time = std::chrono::system_clock::now();
+
+    if (_ponderer == nullptr)
+    {
+        srand(time(NULL));
+
+        _board = Board::initial();
+        _color = color;
+
+        _ponderer_done = false;
+        _ponderer_needs_new_board = true;
+        _ponderer = new std::thread(&Engine::ponder, this);        
+    }
+}
+
+
+int Engine::heuristic(const Board& board)
 {
     ++_heuristic_runs;
-
-    if ((board._toMove == _color) && board.inCheckmate(_color))
-    {
-        return -100000;
-    }
-    if ((board._toMove == Color(1 - _color)) && board.inCheckmate(Color(1 - _color)))
-    {
-        return 100000;
-    }
-    
-    float pawnValue = 1;
-    float knightValue = 3;
-    float bishopValue = 3;
-    float rookValue = 5;
-    float queenValue = 9;    
-    
-    int pawnDiff = 
-        __builtin_popcountll(board._pieces[Pawn] & board._colors[_color]) - 
-        __builtin_popcountll(board._pieces[Pawn] & board._colors[1 - _color]);
-
-    int knightDiff = 
-        __builtin_popcountll(board._pieces[Knight] & board._colors[_color]) - 
-        __builtin_popcountll(board._pieces[Knight] & board._colors[1 - _color]);
-
-    int bishopDiff = 
-        __builtin_popcountll(board._pieces[Bishop] & board._colors[_color]) - 
-        __builtin_popcountll(board._pieces[Bishop] & board._colors[1 - _color]);
-
-    int rookDiff = 
-        __builtin_popcountll(board._pieces[Rook] & board._colors[_color]) - 
-        __builtin_popcountll(board._pieces[Rook] & board._colors[1 - _color]);
-
-    int queenDiff = 
-        __builtin_popcountll(board._pieces[Queen] & board._colors[_color]) - 
-        __builtin_popcountll(board._pieces[Queen] & board._colors[1 - _color]);    
-
-    return
-        pawnValue * pawnDiff +
-        knightValue * knightDiff +
-        bishopValue * bishopDiff +
-        rookValue * rookDiff +
-        queenValue * queenDiff;
+    return Evaluate::GetInstance().getEvaluation(std::ref(board), _color);
 }
 
-void Engine::trimTrifoldRepetition(Board& board, std::vector<Move>& actions)
+
+void Engine::reportTimeLeft(float time)
+{
+    _time = time;
+}
+
+
+void Engine::reportMove(Move move)
+{
+    _board = _board.applyMove(move);
+    _ponderer_needs_new_board = true;
+}
+
+
+void Engine::trimTrifoldRepetition(const Board& board, std::vector<Move>& actions) const
 {
     // trim trifold repetition moves for now
     actions.erase(

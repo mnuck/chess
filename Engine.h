@@ -31,17 +31,24 @@ public:
     Move getMove();
 
 private:
-    float heuristic(Board& board);
-    float minimax(Board& board,
+    int heuristic(const Board& board);
+
+    int negamax(const Board& board,
                   const Color toMove,
                   const unsigned int depth,
-                  const MinimaxPlayer player=Max,
-                  float alpha=-100000,
-                  float beta=100000);
+                  int alpha=-100000,
+                  int beta=100000);
+
+    /*
+    int MTDF(const Board& board,
+             const Color toMove,
+             int f,
+             int d);
+    */
 
     void ponder();
 
-    void trimTrifoldRepetition(Board& board, std::vector<Move>& moves);
+    void trimTrifoldRepetition(const Board& board, std::vector<Move>& moves) const;
 
     Board _board;
     Color _color;
@@ -58,8 +65,9 @@ private:
     std::chrono::time_point<std::chrono::system_clock> _start_time;
     unsigned long long _cache_hits;
     unsigned long long _cache_misses;
+    unsigned long long _cache_collisions;
     
-    static const int TTABLE_SIZE = 16777216;
+    static const int TTABLE_SIZE = 10485760;
     TranspositionNode* _tTable;
 };
 

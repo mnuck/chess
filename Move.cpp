@@ -35,7 +35,7 @@ std::ostream& operator<<(std::ostream& lhs, const Move& rhs)
     return lhs;
 }
 
-bool Move::operator==(const Move& rhs)
+bool Move::operator==(const Move& rhs) const
 {
     return _source == rhs._source && 
            _target == rhs._target && 

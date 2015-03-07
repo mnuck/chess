@@ -48,7 +48,7 @@ Board& Board::operator=(const Board& that)
 Board::~Board() {}
 
 
-Board Board::applyMove(Move move)
+Board Board::applyMove(const Move move) const
 {
     Board result(*this);
 
@@ -56,16 +56,16 @@ Board Board::applyMove(Move move)
     result._toMove = Color(1 - _toMove);
     result._hash ^= Zobrist::GetInstance().getBlackToMove();
 
-    const BitBoard source = (1LL << move.getSource());
-    const BitBoard target = (1LL << move.getTarget());
+    const BitBoard source(1LL << move.getSource());
+    const BitBoard target(1LL << move.getTarget());
 
     // en passant check
     if ((source & result._pieces[Pawn]) != 0LL)
     {  // a pawn moved
-        int diff = move.getSource() - move.getTarget();
+        const int diff = move.getSource() - move.getTarget();
         if (diff % 2 != 0)
         { // a pawn moved diagonally
-            BitBoard allPieces = result._colors[White] | result._colors[Black];
+            const BitBoard allPieces = result._colors[White] | result._colors[Black];
             if ((target & allPieces) == 0LL)
             {  // a pawn attacked an empty square (en passant occured)
                 BitBoard realTarget;
@@ -198,26 +198,16 @@ Board Board::applyMove(Move move)
 }
 
 
-bool Board::good()
-{
-    return _pieces[Pawn]   |
-           _pieces[Rook]   |
-           _pieces[Knight] |
-           _pieces[Bishop] |
-           _pieces[Queen];    
-}
-
-
-BitBoard Board::getUnsafe(Color color) const
+BitBoard Board::getUnsafe(const Color color) const
 {
     const Color otherColor = Color(1 - color);
 
-    BitBoard otherKing = _pieces[King] & _colors[otherColor];
-    BitBoard otherQueens = _pieces[Queen] & _colors[otherColor];
-    BitBoard otherBishops = _pieces[Bishop] & _colors[otherColor];
-    BitBoard otherRooks = _pieces[Rook] & _colors[otherColor];
-    BitBoard otherKnights = _pieces[Knight] & _colors[otherColor];
-    BitBoard otherPawns = _pieces[Pawn] & _colors[otherColor];
+    const BitBoard otherKing = _pieces[King] & _colors[otherColor];
+    const BitBoard otherQueens = _pieces[Queen] & _colors[otherColor];
+    const BitBoard otherBishops = _pieces[Bishop] & _colors[otherColor];
+    const BitBoard otherRooks = _pieces[Rook] & _colors[otherColor];
+    const BitBoard otherKnights = _pieces[Knight] & _colors[otherColor];
+    const BitBoard otherPawns = _pieces[Pawn] & _colors[otherColor];
 
     return
         Kings::GetInstance().getAttacksFrom(otherKing, _colors[otherColor]) |
@@ -229,28 +219,31 @@ BitBoard Board::getUnsafe(Color color) const
 }
 
 
-std::vector<Move> Board::getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator)
+std::vector<Move> Board::getMoves(
+    BitBoard movers, 
+    std::function<BitBoard (BitBoard)> targetGenerator) const
 {
     std::vector<Move> result;
+    result.reserve(21);
     while (0LL != movers)
     {
-        Square source = __builtin_ffsll(movers) - 1;
-        BitBoard sourceBoard = 1LL << source;
+        const Square source(__builtin_ffsll(movers) - 1);
+        BitBoard sourceBoard(1LL << source);
         movers &= ~(1LL << source);
-        BitBoard targets = targetGenerator(sourceBoard);
+        BitBoard targets(targetGenerator(sourceBoard));
         while (0LL != targets)
         {
-            Square target = __builtin_ffsll(targets) - 1;
+            Square target(__builtin_ffsll(targets) - 1);
             targets &= ~(1LL << target);
-            result.push_back(Move(source, target));
+            result.emplace_back(Move(source, target));
 
-            BitBoard targetBoard = 1LL << target;
+            BitBoard targetBoard(1LL << target);
             if (((sourceBoard & _pieces[Pawn]) != 0LL) &&
                 ((targetBoard & 0xFF000000000000FF) != 0LL))
             {
-                result.push_back(Move(source, target, Bishop));
-                result.push_back(Move(source, target, Rook));
-                result.push_back(Move(source, target, Knight));
+                result.emplace_back(Move(source, target, Bishop));
+                result.emplace_back(Move(source, target, Rook));
+                result.emplace_back(Move(source, target, Knight));
             }
         }
     }
@@ -259,7 +252,7 @@ std::vector<Move> Board::getMoves(BitBoard movers, std::function<BitBoard (BitBo
 }
 
 
-std::vector<Move> Board::getKingMoves(Color color)
+std::vector<Move> Board::getKingMoves(const Color color) const
 {
     BitBoard movers = _pieces[King] & _colors[color];
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
@@ -271,7 +264,7 @@ std::vector<Move> Board::getKingMoves(Color color)
 }
 
 
-std::vector<Move> Board::getQueenMoves(Color color)
+std::vector<Move> Board::getQueenMoves(const Color color) const
 {
     BitBoard movers = _pieces[Queen] & _colors[color];
     Color otherColor = Color(1 - color);
@@ -287,7 +280,7 @@ std::vector<Move> Board::getQueenMoves(Color color)
 }
 
 
-std::vector<Move> Board::getBishopMoves(Color color)
+std::vector<Move> Board::getBishopMoves(const Color color) const
 {
     BitBoard movers = _pieces[Bishop] & _colors[color];
     Color otherColor = Color(1 - color);
@@ -303,7 +296,7 @@ std::vector<Move> Board::getBishopMoves(Color color)
 }
 
 
-std::vector<Move> Board::getKnightMoves(Color color)
+std::vector<Move> Board::getKnightMoves(const Color color) const
 {
     BitBoard movers = _pieces[Knight] & _colors[color];
 
@@ -316,7 +309,7 @@ std::vector<Move> Board::getKnightMoves(Color color)
 }
 
 
-std::vector<Move> Board::getRookMoves(Color color)
+std::vector<Move> Board::getRookMoves(const Color color) const
 {
     BitBoard movers = _pieces[Rook] & _colors[color];
     Color otherColor = Color(1 - color);
@@ -332,7 +325,7 @@ std::vector<Move> Board::getRookMoves(Color color)
 }
 
 
-std::vector<Move> Board::getPawnMoves(Color color)
+std::vector<Move> Board::getPawnMoves(const Color color) const
 {
     BitBoard movers = _pieces[Pawn] & _colors[color];
     Color otherColor = Color(1 - color);
@@ -342,7 +335,7 @@ std::vector<Move> Board::getPawnMoves(Color color)
     if (_moves.size() > 0)
     {
         BitBoard mover = 1LL << _moves[_moves.size() - 1].getTarget();
-        if ((mover & _pieces[Pawn] & _colors[1 - color]) != 0LL)
+        if ((mover & _pieces[Pawn] & _colors[otherColor]) != 0LL)
         {  // a pawn moved
             BitBoard moverSource = 1LL << _moves[_moves.size() - 1].getSource();
             BitBoard pseudoMover = 0LL;
@@ -380,21 +373,19 @@ std::vector<Move> Board::getPawnMoves(Color color)
 }
 
 
-std::vector<Move> Board::getCastlingMoves(Color color)
+std::vector<Move> Board::getCastlingMoves(const Color color) const
 {
     std::vector<Move> result;
-    BitBoard kingInitialLoc;
-    if (White == color)
-        kingInitialLoc = 0x0000000000000008;
-    else
-        kingInitialLoc = 0x0800000000000000;
+    const BitBoard kingInitialLoc((White == color) ? 
+                                  0x0000000000000008LL :
+                                  0x0800000000000000LL);
 
     if ((_pieces[King] & _colors[color]) != kingInitialLoc)
         // king is not in initial position
         return result;
     
     Square kingLoc = __builtin_ffsll(kingInitialLoc) - 1;
-    for (Move& m: _moves)
+    for (const Move& m: _moves)
     {
         if (m.getSource() == kingLoc)
         {
@@ -403,16 +394,16 @@ std::vector<Move> Board::getCastlingMoves(Color color)
         }
     }
 
-    BitBoard unsafe = getUnsafe(color);
+    const BitBoard unsafe(getUnsafe(color));
     if (unsafe & kingInitialLoc)
         // king is in check
         return result;
 
-    BitBoard noGo = _colors[Black] | _colors[White] | unsafe;
+    BitBoard noGo(_colors[Black] | _colors[White] | unsafe);
 
-    auto checkSide = [&](BitBoard path, 
-                         BitBoard rookInitialLoc,
-                         int moveOffset) -> void
+    auto checkSide = [&](const BitBoard path, 
+                         const BitBoard rookInitialLoc,
+                         const int moveOffset) -> void
     {
         if (path & noGo)
             // path is unusable
@@ -423,7 +414,7 @@ std::vector<Move> Board::getCastlingMoves(Color color)
             return;
 
         Square rookLoc = __builtin_ffsll(rookInitialLoc) - 1;
-        for (Move& m: _moves)
+        for (const Move& m: _moves)
             if (m.getSource() == rookLoc)
                 // rook has moved
                 return;
@@ -438,17 +429,22 @@ std::vector<Move> Board::getCastlingMoves(Color color)
 }
 
 
-bool Board::inCheck(Color color) const
+bool Board::inCheck(const Color color) const
 {
-    BitBoard unsafe = getUnsafe(color);
-    return (unsafe & _pieces[King] & _colors[color]);
+    return (getUnsafe(color) & _pieces[King] & _colors[color]);
 }
 
 
-bool Board::inCheckmate(const Color color)
+bool Board::inCheckmate(const Color color) const
 {
-    BitBoard unsafe = getUnsafe(color);
-    if (unsafe & _pieces[King] & _colors[color])
+    if ((_pieces[King] & _colors[color]) == 0LL)
+        return true;
+
+    // FIXME make a version of getUnsafe that only cares about
+    // the king's square. if that square is unsafe, then we're
+    // unsafe. so maybe early checks and bail as soon as we know.
+
+    if (getUnsafe(color) & _pieces[King] & _colors[color])
     {
         auto moves = getMoves(color, false);
         if (moves.size() == 0)
@@ -458,7 +454,7 @@ bool Board::inCheckmate(const Color color)
 }
 
 
-std::vector<Move> Board::getMoves(const Color color, bool checkCheckmate)
+std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate) const
 {
     std::vector<Move> result;
     result.reserve(100);
@@ -565,7 +561,7 @@ Board Board::parse(std::istream& inFile)
     return result;    
 }
 
-Board Board::parse(char* filename)
+Board Board::parse(const char* filename)
 {
     Board result;
 

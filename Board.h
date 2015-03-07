@@ -22,36 +22,36 @@ class Board
 public:
     friend std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
     friend class Engine;
+    friend class Evaluate;
 
     Board();
     Board(const Board& that);
     Board& operator=(const Board& that);
     ~Board();
 
-    std::vector<Move> getMoves(const Color color, bool checkCheckmate=true);
-    Board applyMove(Move move);
+    std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true) const;
+    Board applyMove(const Move move) const;
 
-    ZobristNumber getHash() { return _hash; }
-    bool good();
+    ZobristNumber getHash() const { return _hash; }
 
     static Board initial();
-    static Board parse(char* filename);
+    static Board parse(const char* filename);
     static Board parse(std::istream& inFile);
     
 private:
     BitBoard getUnsafe(Color color) const;
 
-    std::vector<Move> getKingMoves(Color color);
-    std::vector<Move> getQueenMoves(Color color);
-    std::vector<Move> getBishopMoves(Color color);
-    std::vector<Move> getKnightMoves(Color color);
-    std::vector<Move> getRookMoves(Color color);
-    std::vector<Move> getPawnMoves(Color color);
-    std::vector<Move> getCastlingMoves(Color color);
+    std::vector<Move> getKingMoves(const Color color) const;
+    std::vector<Move> getQueenMoves(const Color color) const;
+    std::vector<Move> getBishopMoves(const Color color) const;
+    std::vector<Move> getKnightMoves(const Color color) const;
+    std::vector<Move> getRookMoves(const Color color) const;
+    std::vector<Move> getPawnMoves(const Color color) const;
+    std::vector<Move> getCastlingMoves(const Color color) const;
 
-    std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator);
-    bool inCheck(Color color) const;
-    bool inCheckmate(const Color color);
+    std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator) const;
+    bool inCheck(const Color color) const;
+    bool inCheckmate(const Color color) const;
 
     static bool parse(const char square, Color& color, Piece& piece);
 
