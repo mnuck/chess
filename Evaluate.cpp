@@ -10,11 +10,11 @@ int Evaluate::getEvaluation(const Board& board, const Color color)
 
     if (board.inCheckmate(color))
     {
-        return -100000;
+        return -CHECKMATE;
     }
     if (board.inCheckmate(Color(1 - color)))
     {
-        return 100000;
+        return CHECKMATE;
     }
 
     result += materialEval(std::ref(board));
@@ -68,8 +68,8 @@ int Evaluate::pieceSquareEval(const Board& board)
 Evaluate::Evaluate()
 {
     _material[Pawn] = 100;
-    _material[Knight] = 320;
-    _material[Bishop] = 330;
+    _material[Knight] = 320; // 320
+    _material[Bishop] = 330; // 330
     _material[Rook] = 500;
     _material[Queen] = 900;
     _material[King] = 20000;

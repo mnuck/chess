@@ -4,6 +4,8 @@
 namespace BixNix
 {
 
+const int CHECKMATE = 100000;
+
 typedef uint64_t BitBoard;
 typedef uint64_t ZobristNumber;
 

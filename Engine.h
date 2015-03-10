@@ -6,12 +6,13 @@
 #define __ENGINE_H__
 
 #include <chrono>
+#include <climits>
 #include <condition_variable>
 #include <thread>
 
 #include "Enums.h"
 #include "Board.h"
-#include "TranspositionNode.h"
+#include "MTDFTTNode.h"
 
 namespace BixNix
 {
@@ -33,18 +34,17 @@ public:
 private:
     int heuristic(const Board& board);
 
-    int negamax(const Board& board,
-                  const Color toMove,
-                  const unsigned int depth,
-                  int alpha=-100000,
-                  int beta=100000);
-
-    /*
     int MTDF(const Board& board,
              const Color toMove,
-             int f,
-             int d);
-    */
+             int guess,
+             const unsigned int depth);
+
+    int minimax(const Board& board,
+                const Color toMove,
+                const MinimaxPlayer player,
+                const unsigned int depth,
+                int alpha=INT_MIN,
+                int beta=INT_MAX);
 
     void ponder();
 
@@ -61,14 +61,16 @@ private:
     std::condition_variable _cv_best_move_ready;
     std::mutex _cvMutex;
 
+    unsigned long long _node_expansions;
+    unsigned long long _cutoffs;
     unsigned long long _heuristic_runs;
     std::chrono::time_point<std::chrono::system_clock> _start_time;
     unsigned long long _cache_hits;
     unsigned long long _cache_misses;
     unsigned long long _cache_collisions;
     
-    static const int TTABLE_SIZE = 10485760;
-    TranspositionNode* _tTable;
+    static const int TTABLE_SIZE = 16777216;
+    MTDFTTNode* _TTable;
 };
 
 }
