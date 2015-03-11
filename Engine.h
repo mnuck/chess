@@ -35,12 +35,10 @@ private:
     int heuristic(const Board& board);
 
     int MTDF(const Board& board,
-             const Color toMove,
              int guess,
              const unsigned int depth);
 
     int minimax(const Board& board,
-                const Color toMove,
                 const MinimaxPlayer player,
                 const unsigned int depth,
                 int alpha=INT_MIN,

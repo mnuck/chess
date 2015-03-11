@@ -4,6 +4,7 @@
 #include <climits>
 #include <ctime>
 #include <cmath>
+#include <functional>
 #include <vector>
 
 #include "Engine.h"
@@ -15,6 +16,17 @@ namespace BixNix
 
 void Engine::end() 
 {
+    _ponderer_done = true;
+    if (_ponderer != nullptr)
+    {
+        if (_ponderer->joinable())
+        {
+            _ponderer->join();
+        }
+        delete _ponderer;
+        _ponderer = nullptr;
+    }
+
     std::cout << _time << " time left" << std::endl;
 
     auto end_time = std::chrono::system_clock::now();
@@ -41,17 +53,6 @@ void Engine::end()
     std::cout << occupied << " cache slots occupied\n"
               << TTABLE_SIZE << " cache slots total\n"
               << occupied / static_cast<double>(TTABLE_SIZE) << " occupancy" << std::endl;
-
-    _ponderer_done = true;
-    if (_ponderer != nullptr)
-    {
-        if (_ponderer->joinable())
-        {
-            _ponderer->join();
-        }
-        delete _ponderer;
-        _ponderer = nullptr;
-    }
 }
 
 
@@ -72,7 +73,7 @@ Move Engine::getMove()
         int diff = duration_cast<microseconds>(timeSplit - startTime).count();
         splits.push_back(diff);
 
-        if (_ponderer_best_move.score == 100000)
+        if (_ponderer_best_move.score >= CHECKMATE)
         {
             break;
         }
@@ -92,9 +93,10 @@ Move Engine::getMove()
     }
 
     Move move = _ponderer_best_move;
-    std::cout << "taking (" << move.score << ") " << move << " ";
     _board = _board.applyMove(move);
-    
+    _ponderer_needs_new_board = true; 
+//    std::cout << "taking (" << move.score << ") " << move << " ";
+   
     return move;
 }
 
@@ -110,7 +112,7 @@ void Engine::ponder()
             _ponderer_needs_new_board = false;
         }
 
-        std::vector<Move> actions(ponderBoard.getMoves(_color));
+        std::vector<Move> actions(ponderBoard.getMoves(ponderBoard._toMove));
         trimTrifoldRepetition(ponderBoard, actions);
 
         unsigned int depth = 0;
@@ -120,27 +122,27 @@ void Engine::ponder()
                 std::this_thread::sleep_for(std::chrono::seconds(1));
             
 
-            Move bestMove(actions[0]);
             for (Move& m : actions)
             {
                 Board brd(ponderBoard.applyMove(m));
-                m.score = MTDF(brd, Color(1 - _color), m.score, depth);
-                if (m.score > bestMove.score)
-                    bestMove = m;
-                
+                m.score = MTDF(brd, m.score, depth);                
                 if (_ponderer_needs_new_board)
                     break;
             }
             if (_ponderer_needs_new_board)
                 break;
 
-            _ponderer_best_move = bestMove;
+            std::sort(actions.begin(), actions.end(),
+                      [&](const Move& a, const Move& b) -> bool
+                      { return a.score > b.score; });
+
+            _ponderer_best_move = actions[0];
             _cv_best_move_ready.notify_all();
 
             for (int i = actions.size() - 1; i >= 0; --i)
                 std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
 
-            std::cout << "*** " << depth << " " << _ponderer_best_move.score << " " 
+            std::cout << "*** " << depth << " (" << _ponderer_best_move.score << ") " 
                       << _ponderer_best_move << std::endl;
 
             ++depth;
@@ -150,16 +152,15 @@ void Engine::ponder()
 
 
 int Engine::MTDF(const Board& board,
-                 const Color toMove,
                  int guess,
                  const unsigned int depth)
 {
-    int upper = INT_MAX;
-    int lower = INT_MIN;
+    int upper(INT_MAX);
+    int lower(INT_MIN);
     while (lower < upper)
     {
         int beta = (guess == lower) ? guess + 1 : guess;
-        guess = minimax(std::ref(board), toMove, Min, depth, beta - 1, beta);
+        guess = minimax(std::ref(board), Min, depth, beta - 1, beta);
         if (guess < beta)
             upper = guess;
         else
@@ -169,9 +170,7 @@ int Engine::MTDF(const Board& board,
 }
 
 
-
 int Engine::minimax(const Board& board,
-                    const Color toMove,
                     const MinimaxPlayer player,
                     const unsigned int depth,
                     int alpha,
@@ -182,6 +181,11 @@ int Engine::minimax(const Board& board,
         return 0;
 
     int result((Max == player) ? INT_MIN : INT_MAX);
+    auto mm = std::bind(
+        &Engine::minimax, this, 
+        std::placeholders::_1, 
+        MinimaxPlayer(1 - player), depth - 1,
+        std::placeholders::_2, std::placeholders::_3);
 
     MTDFTTNode& node = _TTable[board.getHash() % TTABLE_SIZE];
     if (node._hash == board.getHash() && node._depth >= depth)
@@ -209,40 +213,38 @@ int Engine::minimax(const Board& board,
     }
     else 
     {
-        std::vector<Move> actions(board.getMoves(toMove));
+        std::vector<Move> actions(board.getMoves(board._toMove));
         trimTrifoldRepetition(board, actions);
-        if (actions.size() > 0)
+        if (actions.size() == 0)
+        {
+            //result = 0; // stalemate
+        }
+        else
         {
             // move ordering here
             for (Move& m : actions)
             {
-                Board b(board.applyMove(m));
-                const MTDFTTNode& bNode = _TTable[b.getHash() % TTABLE_SIZE];
-                if (bNode._hash == b.getHash() && node._depth >= depth)
+                Board brd(board.applyMove(m));
+                const MTDFTTNode& bNode = _TTable[brd.getHash() % TTABLE_SIZE];
+                if (bNode._hash == brd.getHash() && node._depth >= depth)
                 {
                     if (bNode._upper == INT_MAX)
                         m.score = bNode._lower;
                     if (bNode._lower == INT_MIN)
                         m.score = bNode._upper;
                 }
-                else 
+                else
                 {
-                    int value = heuristic(b);
-                    m.score = (toMove == _color) ? value : -value;            
+                    m.score = heuristic(brd);
                 }
             }
 
             if (Max == player)
-                std::sort(actions.begin(), actions.end(),
-                          [&](const Move& a, const Move& b) -> bool
-                          { return a.score > b.score; });
-            else
-                std::sort(actions.begin(), actions.end(),
-                          [&](const Move& a, const Move& b) -> bool
-                          { return a.score < b.score; });
-
-            if (Max == player)
             {
+                std::stable_sort(actions.begin(), actions.end(),
+                                 [&](const Move& a, const Move& b) -> bool
+                                 { return a.score > b.score; });
+
                 int a = alpha;
                 for (Move& m: actions)
                 {
@@ -253,7 +255,7 @@ int Engine::minimax(const Board& board,
                     }
 
                     Board brd(board.applyMove(m));
-                    m.score = minimax(brd, Color(1 - toMove), MinimaxPlayer(1 - player), depth - 1, a, beta);
+                    m.score = mm(brd, a, beta);
                     if (_ponderer_done || _ponderer_needs_new_board)
                         return 0;
 
@@ -263,6 +265,10 @@ int Engine::minimax(const Board& board,
             }
             else // Min == player
             {
+                std::stable_sort(actions.begin(), actions.end(),
+                                 [&](const Move& a, const Move& b) -> bool
+                                 { return a.score < b.score; });
+
                 int b = beta;
                 for (Move& m: actions)
                 {
@@ -273,7 +279,7 @@ int Engine::minimax(const Board& board,
                     }
 
                     Board brd(board.applyMove(m));
-                    m.score = minimax(brd, Color(1 - toMove), MinimaxPlayer(1 - player), depth - 1, alpha, b);
+                    m.score = mm(brd, alpha, b);                    
                     if (_ponderer_done || _ponderer_needs_new_board)
                         return 0;
 
@@ -294,15 +300,10 @@ int Engine::minimax(const Board& board,
         store._lower = INT_MIN;
         store._upper = INT_MAX;
         store._depth = depth;
-        if (result <= alpha)
+        if (result < beta)
             store._lower = result;
-        else if (result >= beta)
+        if (result > alpha)
             store._upper = result;
-        else
-        {
-            store._upper = result;
-            store._lower = result;
-        }
     }
 
     return result;

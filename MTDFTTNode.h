@@ -23,9 +23,9 @@ public:
     int _lower;
     int _upper;
     unsigned int _depth;
-    Move _move;
-    
+    Move _move;    
 };
+
 
 }
 

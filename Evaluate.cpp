@@ -68,8 +68,8 @@ int Evaluate::pieceSquareEval(const Board& board)
 Evaluate::Evaluate()
 {
     _material[Pawn] = 100;
-    _material[Knight] = 320; // 320
-    _material[Bishop] = 330; // 330
+    _material[Knight] = 300; // 320
+    _material[Bishop] = 300; // 330
     _material[Rook] = 500;
     _material[Queen] = 900;
     _material[King] = 20000;
