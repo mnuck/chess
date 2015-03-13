@@ -15,11 +15,14 @@
 namespace BixNix
 {
 
-Board::Board()
+Board::Board() :
+    _dirty(0LL),
+    _toMove(White),
+    _hash(0),
+    _epAvailable(-1)
 {
     _pieces.fill(0LL);
     _colors.fill(0LL);
-    _moves.reserve(50);
 }
 
 
@@ -27,8 +30,10 @@ Board::Board(const Board& that):
     _pieces(that._pieces),
     _colors(that._colors),
     _moves(that._moves),
+    _dirty(that._dirty),
     _toMove(that._toMove),
-    _hash(that._hash)
+    _hash(that._hash),
+    _epAvailable(that._epAvailable)
 {
     
 }
@@ -38,160 +43,199 @@ Board& Board::operator=(const Board& that)
 {
     _pieces = that._pieces;
     _colors = that._colors;
+    _dirty  = that._dirty;
     _moves  = that._moves;
     _toMove = that._toMove;
     _hash = that._hash;
+    _epAvailable = that._epAvailable;
     return *this;
 }
 
 
 Board::~Board() {}
 
+Board Board::applyMove(const Move extMove) const
+{
+    // moves that come from the outside don't have all the handy flags
+    // so analyze it and set the proper flags
+    Move move;
+    Square sourceSq(extMove.getSource());
+    Square targetSq(extMove.getTarget());
 
-Board Board::applyMove(const Move move) const
+    move.setSource(sourceSq);
+    move.setTarget(targetSq);
+
+    const BitBoard sourceBB(1LL << sourceSq);
+    const BitBoard targetBB(1LL << targetSq);
+
+    for (size_t i = 0; i < 6; ++i)
+    {
+        if (_pieces[i] & sourceBB)
+            move.setMovingPiece(Piece(i));
+        if (_pieces[i] & targetBB)
+        {
+            move.setCapturedPiece(Piece(i));
+            move.setCapturing(true);
+        }
+    }
+
+    if (move.getMovingPiece() == Pawn)
+    {
+        const int diff = sourceSq - targetSq;
+        if (abs(diff) == 16)
+        {
+            move.setDoublePushing(true);
+            const int file = sourceSq & 7;
+            move.setEnPassantTargetFile(file);
+        }
+        else if (targetBB & 0xFF000000000000FF)
+        {
+            move.setPromoting(true);
+            move.setPromotionPiece(extMove.getPromotionPiece());
+        }
+        else if (((diff & 1) == 1) && 
+                 !move.getCapturing())
+        {
+            move.setEnPassanting(true);
+            move.setCapturing(true);
+            move.setCapturedPiece(Pawn);
+        }
+    }
+
+    if (move.getMovingPiece() == King)
+    {
+        const int diff = sourceSq - targetSq;
+        if (2 == diff)
+        {
+            move.setCastling(true);
+            move.setCastlingDirection(true);
+        }
+        else if (-2 == diff)
+        {
+            move.setCastling(true);
+            move.setCastlingDirection(false);
+        }
+    }
+
+    return applyInternalMove(move);
+}
+
+
+Board Board::applyInternalMove(const Move move) const
 {
     Board result(*this);
 
-    result._moves.push_back(move);
+    std::copy(result._moves.begin() + 1,
+              result._moves.end(),
+              result._moves.begin());
+    result._moves[6] = move;
+    
     result._toMove = Color(1 - _toMove);
     result._hash ^= Zobrist::GetInstance().getBlackToMove();
-
-    const BitBoard source(1LL << move.getSource());
-    const BitBoard target(1LL << move.getTarget());
-
-    // en passant check
-    if ((source & result._pieces[Pawn]) != 0LL)
-    {  // a pawn moved
-        const int diff = move.getSource() - move.getTarget();
-        if (diff % 2 != 0)
-        { // a pawn moved diagonally
-            const BitBoard allPieces = result._colors[White] | result._colors[Black];
-            if ((target & allPieces) == 0LL)
-            {  // a pawn attacked an empty square (en passant occured)
-                BitBoard realTarget;
-                if ((target & 0x0000FF0000000000) != 0LL)
-                {  // white attacker
-                    realTarget = target >> 8;
-                    result._pieces[Pawn]  &= ~realTarget;
-                    result._colors[Black] &= ~realTarget;                    
-                } else {
-                    realTarget = target << 8;
-                    result._pieces[Pawn]  &= ~realTarget;
-                    result._colors[White] &= ~realTarget;                    
-                }
-            }
-        }
+    if (_epAvailable != -1)
+    {
+        result._hash ^= Zobrist::GetInstance().getEPFile(_epAvailable);
+        result._epAvailable = -1;
     }
-
-
-    Piece movingPiece;
-    Piece capturedPiece;
     
-    for (size_t i = 0; i < 6; ++i)
-    {
-        if (result._pieces[i] & source)
-        {
-            movingPiece = Piece(i);
-            capturedPiece = movingPiece;
-            result._pieces[i] &= ~source;
-            result._pieces[i] |= target;
-            continue;
-        }
-        if (result._pieces[i] & target)
-        {
-            capturedPiece = Piece(i);
-            result._pieces[i] &= ~target;
-            continue;
-        }
-    }
+    const Square sourceSq(move.getSource());
+    const Square targetSq(move.getTarget());
+    const BitBoard source(1LL << sourceSq);
+    const BitBoard target(1LL << targetSq);
+    const Piece movingPiece(move.getMovingPiece());
 
+    result._pieces[movingPiece] &= ~source;
+    result._pieces[movingPiece] |= target;
+    result._colors[_toMove] &= ~source;
+    result._colors[_toMove] |= target;
+    result._dirty |= source;
+    result._dirty |= target;
+    result._hash ^= Zobrist::GetInstance().getZobrist(_toMove, movingPiece, sourceSq);
+    result._hash ^= Zobrist::GetInstance().getZobrist(_toMove, movingPiece, targetSq);
 
-    for (size_t i = 0; i < 2; ++i)
+    if (move.getEnPassanting())
     {
-        if (result._colors[i] & source)
+        BitBoard realTargetBB;
+        Square   realTargetSq;
+        if (White == _toMove)
         {
-            result._hash ^= Zobrist::GetInstance().getZobrist(Color(i), movingPiece, move.getSource());
-            result._hash ^= Zobrist::GetInstance().getZobrist(Color(i), movingPiece, move.getTarget());
-            result._colors[i] &= ~source;
-            result._colors[i] |= target;
-            continue;
+            realTargetBB = target >> 8;
+            realTargetSq = targetSq - 8;
+            result._colors[Black] &= ~realTargetBB; 
         } 
-        if (result._colors[i] & target)
-        {            
-            result._hash ^= Zobrist::GetInstance().getZobrist(Color(i), capturedPiece, move.getTarget());
-            result._colors[i] &= ~target;
-            continue;
+        else 
+        {
+            realTargetBB = target << 8;
+            realTargetSq = targetSq + 8;
+            result._colors[White] &= ~realTargetBB;
         }
+        result._pieces[Pawn] &= ~realTargetBB;
+        result._hash ^= Zobrist::GetInstance().getZobrist(Color(1 - _toMove), Pawn, realTargetSq);
+    }
+    else if (move.getCapturing())
+    {
+        const Piece capturedPiece(move.getCapturedPiece());
+        if (capturedPiece != movingPiece)
+            result._pieces[capturedPiece] &= ~target;
+        result._colors[1 - _toMove] &= ~target;
+        result._hash ^= Zobrist::GetInstance().getZobrist(Color(1 - _toMove), capturedPiece, targetSq);
     }
 
-    // promotions
-    if (result._pieces[Pawn] & target & 0xFF000000000000FFLL)
+    if (move.getPromoting())
     {
+        const Piece promotionPiece(move.getPromotionPiece());
         result._pieces[Pawn] &= ~target;
-        result._pieces[move.getPiece()] |= target;
-        if (result._colors[White] & target)
-        {
-            result._hash ^= Zobrist::GetInstance().getZobrist(White, Pawn, move.getTarget());
-            result._hash ^= Zobrist::GetInstance().getZobrist(White, move.getPiece(), move.getTarget());
-        } else {
-            result._hash ^= Zobrist::GetInstance().getZobrist(Black, Pawn, move.getTarget());
-            result._hash ^= Zobrist::GetInstance().getZobrist(Black, move.getPiece(), move.getTarget());
-        }
+        result._pieces[promotionPiece] |= target;
+        result._hash ^= Zobrist::GetInstance().getZobrist(_toMove, Pawn, targetSq);
+        result._hash ^= Zobrist::GetInstance().getZobrist(_toMove, promotionPiece, targetSq);
     }
 
-    // castling
-    if (result._pieces[King] & target)
+    if (move.getDoublePushing())
     {
-        if (2 == move.getSource() - move.getTarget())
+        int file(move.getEnPassantTargetFile());
+        result._epAvailable = file;
+        result._hash ^= Zobrist::GetInstance().getEPFile(file);        
+    }
+
+    if (move.getCastling())
+    {
+        Square rookSource;
+        Square rookTarget;
+        if (White == _toMove)
         {
-            if (result._colors[White] & target)
+            result._hash ^= Zobrist::GetInstance().getWKCastle();
+            if (move.getCastlingDirection() == true)
             {
                 result._hash ^= Zobrist::GetInstance().getWKCastle();
-                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(0));
-                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(2));                
-
-                result._pieces[Rook] &=  0xFFFFFFFFFFFFFFFELL;
-                result._colors[White] &= 0xFFFFFFFFFFFFFFFELL;
-                result._pieces[Rook] |=  0x0000000000000004LL;
-                result._colors[White] |= 0x0000000000000004LL;
-            } 
-            else 
-            {
-                result._hash ^= Zobrist::GetInstance().getBKCastle();
-                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(56));
-                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(58));                
-
-                result._pieces[Rook] &=  0xFEFFFFFFFFFFFFFFLL;
-                result._colors[Black] &= 0xFEFFFFFFFFFFFFFFLL;
-                result._pieces[Rook] |=  0x0400000000000000LL;
-                result._colors[Black] |= 0x0400000000000000LL;
-            }
-        }
-        else if (2 == move.getTarget() - move.getSource())
-        {
-            if (result._colors[White] & target)
-            {
+                rookSource = 0;
+                rookTarget = 2;
+            } else {
                 result._hash ^= Zobrist::GetInstance().getWQCastle();
-                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(7));
-                result._hash ^= Zobrist::GetInstance().getZobrist(White, Rook, Square(4));
-
-                result._pieces[Rook] &=  0xFFFFFFFFFFFFFF7FLL;
-                result._colors[White] &= 0xFFFFFFFFFFFFFF7FLL;
-                result._pieces[Rook] |=  0x0000000000000010LL;
-                result._colors[White] |= 0x0000000000000010LL;
+                rookSource = 7;
+                rookTarget = 4;
             }
-            else
+        } else {
+            if (move.getCastlingDirection() == true)
             {
                 result._hash ^= Zobrist::GetInstance().getBKCastle();
-                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(63));
-                result._hash ^= Zobrist::GetInstance().getZobrist(Black, Rook, Square(60));
-
-                result._pieces[Rook] &=  0x7FFFFFFFFFFFFFFFLL;
-                result._colors[Black] &= 0x7FFFFFFFFFFFFFFFLL;
-                result._pieces[Rook] |=  0x1000000000000000LL;
-                result._colors[Black] |= 0x1000000000000000LL;
+                rookSource = 56;
+                rookTarget = 58;
+            } else {
+                result._hash ^= Zobrist::GetInstance().getBQCastle();
+                rookSource = 63;
+                rookTarget = 60;
             }
         }
+        const BitBoard rookSourceBB(1LL << rookSource);
+        const BitBoard rookTargetBB(1LL << rookTarget);
+        result._pieces[Rook]    &= ~rookSourceBB;
+        result._pieces[Rook]    |=  rookTargetBB;
+        result._colors[_toMove] &= ~rookSourceBB;
+        result._colors[_toMove] |=  rookTargetBB;
+        result._dirty |= rookSourceBB;
+        result._dirty |= rookTargetBB;
+        result._hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookSource);
+        result._hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookTarget);
     }
 
     return result;
@@ -224,7 +268,7 @@ std::vector<Move> Board::getMoves(
     std::function<BitBoard (BitBoard)> targetGenerator) const
 {
     std::vector<Move> result;
-    result.reserve(21);
+    result.reserve(400);
     while (0LL != movers)
     {
         const Square source(__builtin_ffsll(movers) - 1);
@@ -234,17 +278,23 @@ std::vector<Move> Board::getMoves(
         while (0LL != targets)
         {
             Square target(__builtin_ffsll(targets) - 1);
+
             targets &= ~(1LL << target);
-            result.emplace_back(Move(source, target));
 
             BitBoard targetBoard(1LL << target);
+
+            bool capturing((targetBoard & (_pieces[White] | _pieces[Black])) != 0LL);
+
             if (((sourceBoard & _pieces[Pawn]) != 0LL) &&
                 ((targetBoard & 0xFF000000000000FF) != 0LL))
             {
-                result.emplace_back(Move(source, target, Bishop));
-                result.emplace_back(Move(source, target, Rook));
-                result.emplace_back(Move(source, target, Knight));
+                result.emplace_back(Move(source, target, Bishop, capturing));
+                result.emplace_back(Move(source, target, Rook, capturing));
+                result.emplace_back(Move(source, target, Knight, capturing));
+                result.emplace_back(Move(source, target, Queen, capturing));
             }
+            else
+                result.emplace_back(Move(source, target, capturing));
         }
     }
 
@@ -331,35 +381,13 @@ std::vector<Move> Board::getPawnMoves(const Color color) const
     Color otherColor = Color(1 - color);
     BitBoard targets = _colors[otherColor];
 
-    // en passant handling
-    if (_moves.size() > 0)
+    if (_epAvailable > -1)
     {
-        BitBoard mover = 1LL << _moves[_moves.size() - 1].getTarget();
-        if ((mover & _pieces[Pawn] & _colors[otherColor]) != 0LL)
-        {  // a pawn moved
-            BitBoard moverSource = 1LL << _moves[_moves.size() - 1].getSource();
-            BitBoard pseudoMover = 0LL;
-            if (White == color)
-            {
-                if (((moverSource & 0x00FF000000000000) != 0LL) &&
-                    ((mover       & 0x000000FF00000000) != 0LL))
-                {  // pawn did a double push
-                    pseudoMover = mover << 8;
-                }
-            } else {
-                if (((moverSource & 0x000000000000FF00) != 0LL) &&
-                    ((mover       & 0x00000000FF000000) != 0LL))
-                {
-                    pseudoMover = mover >> 8;
-                }
-                
-            }
-            if (pseudoMover != 0LL)
-            {
-                targets &= ~mover;
-                targets |= pseudoMover;
-            }            
-        }
+        Square epSquare(47 - _epAvailable);
+        if (Black == color)
+            epSquare -= 24;
+
+        targets |= (1LL << epSquare);
     }
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
@@ -380,50 +408,82 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
                                   0x0000000000000008LL :
                                   0x0800000000000000LL);
 
-    if ((_pieces[King] & _colors[color]) != kingInitialLoc)
-        // king is not in initial position
-        return result;
-    
-    Square kingLoc = __builtin_ffsll(kingInitialLoc) - 1;
-    for (const Move& m: _moves)
+    if (White == color)
     {
-        if (m.getSource() == kingLoc)
-        {
-            // king has moved
+        if (WKingMoved() || (WKRookMoved() && WQRookMoved()))
+            return result; // nobody to castle with
+
+        const BitBoard unsafe(getUnsafe(color));
+        if (getUnsafe(color) & kingInitialLoc)
             return result;
+
+        const BitBoard noGo(_colors[Black] | _colors[White] | unsafe);
+        Square kingLoc(3);
+        if (!WKRookMoved())
+        {
+            const BitBoard path(8LL);
+            if ((path & noGo) == 0LL)
+            {
+                Move move;
+                move.setSource(kingLoc);
+                move.setTarget(kingLoc - 2);
+                move.setCastling(true);
+                move.setCastlingDirection(true);
+                result.push_back(move);
+            }
+        }
+        if (!WQRookMoved())
+        {
+            const BitBoard path(48LL);
+            if ((path & noGo) == 0LL)
+            {
+                Move move;
+                move.setSource(kingLoc);
+                move.setTarget(kingLoc + 2);
+                move.setCastling(true);
+                move.setCastlingDirection(false);
+                result.push_back(move);
+            }
+        }
+    } 
+    else // Black == color
+    {
+        if (BKingMoved() || (BKRookMoved() && BQRookMoved()))
+            return result; // nobody  to castle with
+
+        const BitBoard unsafe(getUnsafe(color));
+        if (getUnsafe(color) & kingInitialLoc)
+            return result;
+
+        const BitBoard noGo(_colors[Black] | _colors[White] | unsafe);
+        Square kingLoc(59);
+        if (!BKRookMoved())
+        {
+            const BitBoard path(8LL << 56);
+            if ((path & noGo) == 0LL)
+            {
+                Move move;
+                move.setSource(kingLoc);
+                move.setTarget(kingLoc - 2);
+                move.setCastling(true);
+                move.setCastlingDirection(true);
+                result.push_back(move);
+            }
+        }
+        if (!BQRookMoved())
+        {
+            const BitBoard path(48LL << 56);
+            if ((path & noGo) == 0LL)
+            {
+                Move move;
+                move.setSource(kingLoc);
+                move.setTarget(kingLoc + 2);
+                move.setCastling(true);
+                move.setCastlingDirection(false);
+                result.push_back(move);
+            }
         }
     }
-
-    const BitBoard unsafe(getUnsafe(color));
-    if (unsafe & kingInitialLoc)
-        // king is in check
-        return result;
-
-    BitBoard noGo(_colors[Black] | _colors[White] | unsafe);
-
-    auto checkSide = [&](const BitBoard path, 
-                         const BitBoard rookInitialLoc,
-                         const int moveOffset) -> void
-    {
-        if (path & noGo)
-            // path is unusable
-            return;
-    
-        if ((_pieces[Rook] & _colors[color] & rookInitialLoc) == 0LL)
-            // rook is not in initial position
-            return;
-
-        Square rookLoc = __builtin_ffsll(rookInitialLoc) - 1;
-        for (const Move& m: _moves)
-            if (m.getSource() == rookLoc)
-                // rook has moved
-                return;
-
-        result.push_back(Move(kingLoc, kingLoc + moveOffset));
-    };
-
-    checkSide(3LL << (kingLoc - 2), kingInitialLoc >> 3, -2); // kingside
-    checkSide(7LL << (kingLoc + 1), kingInitialLoc << 4,  2); // queenside
     
     return result;
 }
@@ -540,22 +600,29 @@ Board Board::parse(std::istream& inFile)
         inFile >> source;
         inFile >> target;
         inFile >> promotion;
+        Move move;
+        move.setSource(source);
+        move.setTarget(target);
         switch (promotion)
         {
         case 'B':
-            result._moves.push_back(Move(source, target, Bishop));
+            move.setPromotionPiece(Bishop);
             break;
         case 'N':
-            result._moves.push_back(Move(source, target, Knight));
+            move.setPromotionPiece(Knight);
             break;
         case 'R':
-            result._moves.push_back(Move(source, target, Rook));
+            move.setPromotionPiece(Rook);
             break;
         case 'Q':
         default:
-            result._moves.push_back(Move(source, target, Queen));
+            move.setPromotionPiece(Queen);
             break;
         }
+        std::copy(result._moves.begin() + 1,
+                  result._moves.end(), 
+                  result._moves.begin());
+        result._moves[6] = move;
     }
     
     return result;    
@@ -681,11 +748,6 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
         {
             lhs << "\n";
         }
-    }
-
-    for (const Move& m : rhs._moves)
-    {
-        lhs << m << "\n";
     }
 
     return lhs;

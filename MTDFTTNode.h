@@ -17,7 +17,7 @@ public:
         _lower(INT_MIN),
         _upper(INT_MAX),
         _depth(0),
-        _move(Move(0,0)) {}
+        _move(Move()) {}
 
     ZobristNumber _hash;
     int _lower;

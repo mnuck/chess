@@ -32,6 +32,7 @@ public:
     Move getMove();
 
 private:
+
     int heuristic(const Board& board);
 
     int MTDF(const Board& board,
@@ -42,7 +43,14 @@ private:
                 const MinimaxPlayer player,
                 const unsigned int depth,
                 int alpha=INT_MIN,
-                int beta=INT_MAX);
+                int beta=INT_MAX,
+                const int pvHeight=1);
+
+/*    int quiescent(const Board& board,
+                  const MinimaxPlayer player,
+                  int alpha,
+                  int beta);
+*/
 
     void ponder();
 
@@ -51,6 +59,9 @@ private:
     Board _board;
     Color _color;
     float _time;
+
+    static const int HEIGHTMAX = 1000;
+    std::array<Move, HEIGHTMAX> _pv;
 
     std::thread* _ponderer;
     bool _ponderer_done;

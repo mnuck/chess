@@ -13,7 +13,7 @@ public:
     virtual ~Zobrist() {}
 
     ZobristNumber getZobrist(Color color, Piece piece, Square square);
-    ZobristNumber getEPFile(Square square);
+    ZobristNumber getEPFile(int file);
     ZobristNumber getBlackToMove() { return _blackToMove; }
     ZobristNumber getWQCastle() { return _WQCastle; }
     ZobristNumber getWKCastle() { return _WKCastle; }

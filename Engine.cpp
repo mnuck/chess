@@ -33,7 +33,8 @@ void Engine::end()
     auto diff = 
         std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
-    std::cout << diff.count() << " seconds" << std::endl;
+    std::cout << diff.count() << " seconds "
+              << _node_expansions / static_cast<double>(diff.count()) << std::endl;
 
     std::cout << _node_expansions << " node expansions\n"
               << _cutoffs << " cutoffs\n"
@@ -95,7 +96,8 @@ Move Engine::getMove()
     Move move = _ponderer_best_move;
     _board = _board.applyMove(move);
     _ponderer_needs_new_board = true; 
-//    std::cout << "taking (" << move.score << ") " << move << " ";
+    std::cout << "sending (" << move.score << ") " << move << " " << std::endl;
+    std::cout << _board << std::endl;
    
     return move;
 }
@@ -136,14 +138,27 @@ void Engine::ponder()
                       [&](const Move& a, const Move& b) -> bool
                       { return a.score > b.score; });
 
+
+//            for (int i = actions.size() - 1; i >= 0; --i)
+//                std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
+
+            std::cout << "*** " << depth << " (" << actions[0].score << ") " 
+                      << actions[0] << std::endl;
+/*
+            _pv[0] = actions[0];
+            std::cout << "PV: ";
+            for (Move& m : _pv)
+            {
+                if (Move(0, 0) == m)
+                    break;
+                else
+                    std::cout << m << " ";
+                m = Move(0, 0);
+            }
+            std::cout << std::endl;            
+*/
             _ponderer_best_move = actions[0];
             _cv_best_move_ready.notify_all();
-
-            for (int i = actions.size() - 1; i >= 0; --i)
-                std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
-
-            std::cout << "*** " << depth << " (" << _ponderer_best_move.score << ") " 
-                      << _ponderer_best_move << std::endl;
 
             ++depth;
         }
@@ -174,7 +189,8 @@ int Engine::minimax(const Board& board,
                     const MinimaxPlayer player,
                     const unsigned int depth,
                     int alpha,
-                    int beta)
+                    int beta,
+                    const int pvHeight)
 {
     ++_node_expansions;
     if (_ponderer_done || _ponderer_needs_new_board)
@@ -185,7 +201,8 @@ int Engine::minimax(const Board& board,
         &Engine::minimax, this, 
         std::placeholders::_1, 
         MinimaxPlayer(1 - player), depth - 1,
-        std::placeholders::_2, std::placeholders::_3);
+        std::placeholders::_2, std::placeholders::_3,
+        pvHeight + 1);
 
     MTDFTTNode& node = _TTable[board.getHash() % TTABLE_SIZE];
     if (node._hash == board.getHash() && node._depth >= depth)
@@ -221,7 +238,7 @@ int Engine::minimax(const Board& board,
         }
         else
         {
-            // move ordering here
+/*            // move ordering here
             for (Move& m : actions)
             {
                 Board brd(board.applyMove(m));
@@ -237,14 +254,28 @@ int Engine::minimax(const Board& board,
                 {
                     m.score = heuristic(brd);
                 }
+                if (m.getCapturing())
+                {
+                    m.score += (Max == player) ? 10000 : -10000;
+                }
             }
-
+*/
             if (Max == player)
             {
-                std::stable_sort(actions.begin(), actions.end(),
+//                std::sort(actions.begin(), actions.end(),
+//                          [&](const Move& a, const Move& b) -> bool
+//                          { return a.score > b.score; });
+                // PV nodes first
+/*                std::stable_sort(actions.begin(), actions.end(),
                                  [&](const Move& a, const Move& b) -> bool
-                                 { return a.score > b.score; });
-
+                                 {
+                                     auto itA = std::find(_pv.begin(),_pv.end(), a);
+                                     auto itB = std::find(_pv.begin(),_pv.end(), b);
+                                     bool foundA = (itA != _pv.end());
+                                     bool foundB = (itB != _pv.end());
+                                     return foundA && !foundB;
+                                 });
+*/
                 int a = alpha;
                 for (Move& m: actions)
                 {
@@ -260,15 +291,29 @@ int Engine::minimax(const Board& board,
                         return 0;
 
                     result = std::max(result, m.score);
-                    a = std::min(result, a);
+                    if (result > a)
+                    {
+                        a = result;
+                        _pv[pvHeight] = m;
+                    }
                 }
             }
             else // Min == player
             {
-                std::stable_sort(actions.begin(), actions.end(),
+//                std::sort(actions.begin(), actions.end(),
+//                          [&](const Move& a, const Move& b) -> bool
+//                          { return a.score < b.score; });
+                // PV nodes first
+/*                std::stable_sort(actions.begin(), actions.end(),
                                  [&](const Move& a, const Move& b) -> bool
-                                 { return a.score < b.score; });
-
+                                 {
+                                     auto itA = std::find(_pv.begin(),_pv.end(), a);
+                                     auto itB = std::find(_pv.begin(),_pv.end(), b);
+                                     bool foundA = (itA != _pv.end());
+                                     bool foundB = (itB != _pv.end());
+                                     return foundA && !foundB;
+                                 });
+*/
                 int b = beta;
                 for (Move& m: actions)
                 {
@@ -284,6 +329,11 @@ int Engine::minimax(const Board& board,
                         return 0;
 
                     result = std::min(result, m.score);
+                    if (result < b)
+                    {
+                        b = result;
+                        _pv[pvHeight] = m;
+                    }
                     b = std::min(result, b);
                 }
             }
@@ -310,9 +360,10 @@ int Engine::minimax(const Board& board,
 }
 
 
+
 Engine::Engine():
     _ponderer(nullptr),
-    _ponderer_best_move(Move(0,0)),
+    _ponderer_best_move(Move()),
     _node_expansions(0),
     _cutoffs(0),
     _cache_hits(0),
@@ -366,7 +417,9 @@ void Engine::reportTimeLeft(float time)
 
 void Engine::reportMove(Move move)
 {
+    std::cout << "receiving " << move << " " << std::endl;
     _board = _board.applyMove(move);
+    std::cout << _board << std::endl;
     _ponderer_needs_new_board = true;
 }
 
@@ -380,16 +433,12 @@ void Engine::trimTrifoldRepetition(const Board& board, std::vector<Move>& action
             actions.end(),
             [&] (Move& move) -> bool
             {
-                size_t moveLength = board._moves.size();
-                if (moveLength >= 7)
+                if ((move            == board._moves[3]) &&
+                    (board._moves[6] == board._moves[2]) &&
+                    (board._moves[5] == board._moves[1]) &&
+                    (board._moves[4] == board._moves[0]))
                 {
-                    if ((move == board._moves[moveLength - 4]) &&
-                        (board._moves[moveLength - 1] == board._moves[moveLength - 5]) &&
-                        (board._moves[moveLength - 2] == board._moves[moveLength - 6]) &&
-                        (board._moves[moveLength - 3] == board._moves[moveLength - 7]))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
                 return false;
             }),

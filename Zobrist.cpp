@@ -39,9 +39,8 @@ ZobristNumber Zobrist::getZobrist(Color color, Piece piece, Square square)
 }
 
 
-ZobristNumber Zobrist::getEPFile(Square square)
+ZobristNumber Zobrist::getEPFile(const int file)
 {
-    size_t file = square % 8;
     return _epFile[file];
 }
 
