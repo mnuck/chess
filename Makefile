@@ -1,14 +1,14 @@
-CXX = clang++-3.5
-CXXFLAGS = -O3 -Wall -W -pedantic-errors -std=c++11 -msse4.2
+CXX = g++
+CXXFLAGS = -O3 -Wall -Wextra -std=c++11 -msse4.2
 
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h *.hpp)
 
 OBJECTS = $(SOURCES:%.cpp=%.o)
 
-all: chess library
+all: chess
 
-default: chess library
+default: chess
 
 test: chess
 	./chess --test
@@ -16,8 +16,8 @@ test: chess
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-library: Engine.o Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o
-	ar cr BixNix.a Engine.o Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o
+BixNix.a: Engine.o Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o Zobrist.o Evaluate.o
+	ar cr BixNix.a Engine.o Bishops.o BitBoard.o Board.o Kings.o Knights.o Move.o Pawns.o Queens.o Rooks.o Zobrist.o Evaluate.o
 
 chess: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $@

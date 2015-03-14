@@ -32,15 +32,18 @@ public:
     std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true) const;
 
     Board applyMove(const Move extMove) const;
-    Board applyInternalMove(const Move move) const;
 
     ZobristNumber getHash() const { return _hash; }
+    uint64_t perft(const int depth);
 
     static Board initial();
-    static Board parse(const char* filename);
-    static Board parse(std::istream& inFile);
-    
+    static Board parseEPD(std::istream& inFile);
+
+    bool inCheck(const Color color) const;
+    bool inCheckmate(const Color color) const;
 private:
+    Board applyInternalMove(const Move move) const;
+
     BitBoard getUnsafe(Color color) const;
 
     std::vector<Move> getKingMoves(const Color color) const;
@@ -52,8 +55,6 @@ private:
     std::vector<Move> getCastlingMoves(const Color color) const;
 
     std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator) const;
-    bool inCheck(const Color color) const;
-    bool inCheckmate(const Color color) const;
 
     static bool parse(const char square, Color& color, Piece& piece);
 

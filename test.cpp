@@ -42,7 +42,7 @@ bool test()
         std::cout << "Now Testing: " << filename << std::endl;
         
         std::ifstream testFile(filename);
-        BixNix::Board board = BixNix::Board::parse(testFile);
+        BixNix::Board board; // = BixNix::Board::parse(testFile);
         int source, target;
         size_t whiteMoveCount, blackMoveCount;
         std::vector<BixNix::Move> whiteTrueMoves;

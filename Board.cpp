@@ -252,14 +252,15 @@ BitBoard Board::getUnsafe(const Color color) const
     const BitBoard otherRooks = _pieces[Rook] & _colors[otherColor];
     const BitBoard otherKnights = _pieces[Knight] & _colors[otherColor];
     const BitBoard otherPawns = _pieces[Pawn] & _colors[otherColor];
+    const BitBoard allPieces = _colors[White] | _colors[Black];
 
     return
-        Kings::GetInstance().getAttacksFrom(otherKing, _colors[otherColor]) |
-        Queens::GetInstance().getAttacksFrom(otherQueens, _colors[color], _colors[otherColor]) |
-        Bishops::GetInstance().getAttacksFrom(otherBishops, _colors[color], _colors[otherColor]) |
-        Rooks::GetInstance().getAttacksFrom(otherRooks, _colors[color], _colors[otherColor]) |
-        Knights::GetInstance().getAttacksFrom(otherKnights, _colors[otherColor]) |
-        Pawns::GetInstance().getAttacksFrom(otherPawns, _colors[color], otherColor);    
+        Kings::GetInstance().getAttacksFrom(otherKing, 0LL) |
+        Queens::GetInstance().getAttacksFrom(otherQueens, allPieces, 0LL) |
+        Bishops::GetInstance().getAttacksFrom(otherBishops, allPieces, 0LL) |
+        Rooks::GetInstance().getAttacksFrom(otherRooks, allPieces, 0LL) |
+        Knights::GetInstance().getAttacksFrom(otherKnights, 0LL) |
+        Pawns::GetInstance().getAttacksFrom(otherPawns, 0xFFFFFFFFFFFFFFFF, otherColor);    
 }
 
 
@@ -383,7 +384,7 @@ std::vector<Move> Board::getPawnMoves(const Color color) const
 
     if (_epAvailable > -1)
     {
-        Square epSquare(47 - _epAvailable);
+        Square epSquare(40 + _epAvailable);
         if (Black == color)
             epSquare -= 24;
 
@@ -417,11 +418,12 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
         if (getUnsafe(color) & kingInitialLoc)
             return result;
 
-        const BitBoard noGo(_colors[Black] | _colors[White] | unsafe);
+        const BitBoard blocked(_colors[Black] | _colors[White]);
+        const BitBoard noGo(blocked | unsafe);
         Square kingLoc(3);
         if (!WKRookMoved())
         {
-            const BitBoard path(8LL);
+            const BitBoard path(6LL);
             if ((path & noGo) == 0LL)
             {
                 Move move;
@@ -434,8 +436,10 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
         }
         if (!WQRookMoved())
         {
-            const BitBoard path(48LL);
-            if ((path & noGo) == 0LL)
+            const BitBoard rookPath(112LL);
+            const BitBoard kingPath(48LL);
+            if ((kingPath & noGo) == 0LL &&
+                (rookPath & blocked) == 0LL)
             {
                 Move move;
                 move.setSource(kingLoc);
@@ -455,11 +459,12 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
         if (getUnsafe(color) & kingInitialLoc)
             return result;
 
-        const BitBoard noGo(_colors[Black] | _colors[White] | unsafe);
+        const BitBoard blocked(_colors[Black] | _colors[White]);
+        const BitBoard noGo(blocked | unsafe);
         Square kingLoc(59);
         if (!BKRookMoved())
         {
-            const BitBoard path(8LL << 56);
+            const BitBoard path(6LL << 56);
             if ((path & noGo) == 0LL)
             {
                 Move move;
@@ -472,8 +477,10 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
         }
         if (!BQRookMoved())
         {
-            const BitBoard path(48LL << 56);
-            if ((path & noGo) == 0LL)
+            const BitBoard rookPath(112LL << 56);
+            const BitBoard kingPath(48LL << 56);
+            if ((kingPath & noGo) == 0LL &&
+                (rookPath & blocked) == 0LL)
             {
                 Move move;
                 move.setSource(kingLoc);
@@ -519,7 +526,9 @@ std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate) 
     std::vector<Move> result;
     result.reserve(100);
     if (checkCheckmate && inCheckmate(color))
+    {
         return result;
+    }
 
     std::vector<Move> kings(getKingMoves(color));
     std::vector<Move> queens(getQueenMoves(color));
@@ -562,8 +571,8 @@ Board Board::initial()
     result._pieces[Bishop] = 0x2400000000000024;
     result._pieces[Queen]  = 0x1000000000000010;
     result._pieces[King]   = 0x0800000000000008;
-    result._colors[Black]   = 0xFFFF000000000000;
-    result._colors[White]   = 0x000000000000FFFF;
+    result._colors[Black]  = 0xFFFF000000000000;
+    result._colors[White]  = 0x000000000000FFFF;
     result._toMove = White;
 
     result._hash = 0LL;
@@ -572,69 +581,96 @@ Board Board::initial()
 }
 
 
-Board Board::parse(std::istream& inFile)
+uint64_t Board::perft(const int depth)
 {
-    Board result;
-    char buffer;
-    Color color;
-    Piece piece;
+    uint64_t result = 0;
 
-    for (int i = 0; i < 64 && inFile.good(); ++i)
-    {
-        inFile >> buffer;
-        if (parse(buffer, color, piece))
-        {
-            BitBoard mask = (1LL << (63 - i));
-            result._pieces[piece] |= mask;
-            result._colors[color] |= mask;
-        }
-    }
-
-    size_t moveCount;
-    inFile >> moveCount;
-    for (size_t i = 0; i < moveCount; ++i)
-    {
-        int source;
-        int target;
-        char promotion;
-        inFile >> source;
-        inFile >> target;
-        inFile >> promotion;
-        Move move;
-        move.setSource(source);
-        move.setTarget(target);
-        switch (promotion)
-        {
-        case 'B':
-            move.setPromotionPiece(Bishop);
-            break;
-        case 'N':
-            move.setPromotionPiece(Knight);
-            break;
-        case 'R':
-            move.setPromotionPiece(Rook);
-            break;
-        case 'Q':
-        default:
-            move.setPromotionPiece(Queen);
-            break;
-        }
-        std::copy(result._moves.begin() + 1,
-                  result._moves.end(), 
-                  result._moves.begin());
-        result._moves[6] = move;
-    }
+    if (0 == depth)
+        return 1;
     
-    return result;    
+    auto moves(getMoves(_toMove));
+    for (const Move& m : moves)
+    {
+        Board brd(applyMove(m));
+        result += brd.perft(depth - 1);
+    }
+
+    return result;
 }
 
-Board Board::parse(const char* filename)
+
+Board Board::parseEPD(std::istream& in)
 {
     Board result;
+    std::string piecePlacement;
+    std::string sideToMove;
+    std::string castling;
+    std::string enPassant;
 
-    std::ifstream inFile(filename);
-    result = parse(inFile);
-    inFile.close();
+    in >> piecePlacement;
+    in >> sideToMove;
+    in >> castling;
+    in >> enPassant;
+
+    // piece placement
+    int index = 63;
+    for (char& c : piecePlacement)
+    {
+        Color color;
+        Piece piece;
+        if (parse(c, color, piece))
+        {
+            result._pieces[piece] |= (1LL << index);
+            result._colors[color] |= (1LL << index);
+            --index;
+        }
+        else if ('/' == c)
+        {
+            // this character does nothing
+        }
+        else // better be a number
+        {
+            int spaces = c - 48;
+            index -= spaces;
+        }
+    }
+    
+    // side to move
+    if ("w" == sideToMove)
+        result._toMove = White;
+    else
+        result._toMove = Black;
+    
+    // castling
+    BitBoard clean = 0LL;
+    if (std::string::npos != castling.find('q'))
+        clean |= 0x8800000000000000;
+    if (std::string::npos != castling.find('k'))
+        clean |= 0x0900000000000000;
+    if (std::string::npos != castling.find('Q'))
+        clean |= 0x0000000000000088;
+    if (std::string::npos != castling.find('K'))
+        clean |= 0x0000000000000009;
+    result._dirty = ~clean;
+
+    // en passant
+    if (std::string::npos != castling.find('a'))
+        result._epAvailable = 7;
+    if (std::string::npos != castling.find('b'))
+        result._epAvailable = 6;
+    if (std::string::npos != castling.find('c'))
+        result._epAvailable = 5;
+    if (std::string::npos != castling.find('d'))
+        result._epAvailable = 4;
+    if (std::string::npos != castling.find('e'))
+        result._epAvailable = 3;
+    if (std::string::npos != castling.find('f'))
+        result._epAvailable = 2;
+    if (std::string::npos != castling.find('g'))
+        result._epAvailable = 1;
+    if (std::string::npos != castling.find('h'))
+        result._epAvailable = 0;
+
     return result;
 }
 
@@ -643,51 +679,51 @@ bool Board::parse(const char square, Color& color, Piece& piece)
 {
     switch (square)
     {
-    case 'p':
-        piece = Pawn;
-        color = White;
-        return true;        
     case 'P':
         piece = Pawn;
-        color = Black;
-        return true;        
-    case 'r':
-        piece = Rook;
         color = White;
+        return true;        
+    case 'p':
+        piece = Pawn;
+        color = Black;
         return true;        
     case 'R':
         piece = Rook;
-        color = Black;
-        return true;        
-    case 'n':
-        piece = Knight;
         color = White;
+        return true;        
+    case 'r':
+        piece = Rook;
+        color = Black;
         return true;        
     case 'N':
         piece = Knight;
-        color = Black;
-        return true;        
-    case 'b':
-        piece = Bishop;
         color = White;
+        return true;        
+    case 'n':
+        piece = Knight;
+        color = Black;
         return true;        
     case 'B':
         piece = Bishop;
-        color = Black;
-        return true;        
-    case 'q':
-        piece = Queen;
         color = White;
+        return true;        
+    case 'b':
+        piece = Bishop;
+        color = Black;
         return true;        
     case 'Q':
         piece = Queen;
+        color = White;
+        return true;        
+    case 'q':
+        piece = Queen;
         color = Black;
         return true;        
-    case 'k':
+    case 'K':
         piece = King;
         color = White;
         return true;        
-    case 'K':
+    case 'k':
         piece = King;
         color = Black;
         return true;        
@@ -703,40 +739,40 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
     {
         if (rhs._pieces[Pawn] & 
             rhs._colors[White] &
-            (1LL << i)) return 'p';
+            (1LL << i)) return 'P';
         if (rhs._pieces[Pawn] & 
             rhs._colors[Black] &
-            (1LL << i)) return 'P';
+            (1LL << i)) return 'p';
         if (rhs._pieces[Rook] & 
             rhs._colors[White] &
-            (1LL << i)) return 'r';
-        if (rhs._pieces[Rook] & 
-            rhs._colors[Black] &
             (1LL << i)) return 'R';
+        if (rhs._pieces[Rook] & 
+            rhs._colors[Black] &
+            (1LL << i)) return 'r';
         if (rhs._pieces[Knight] & 
             rhs._colors[White] &
-            (1LL << i)) return 'n';
-        if (rhs._pieces[Knight] & 
-            rhs._colors[Black] &
             (1LL << i)) return 'N';
+        if (rhs._pieces[Knight] & 
+            rhs._colors[Black] &
+            (1LL << i)) return 'n';
         if (rhs._pieces[Bishop] & 
             rhs._colors[White] &
-            (1LL << i)) return 'b';
-        if (rhs._pieces[Bishop] & 
-            rhs._colors[Black] &
             (1LL << i)) return 'B';
+        if (rhs._pieces[Bishop] & 
+            rhs._colors[Black] &
+            (1LL << i)) return 'b';
         if (rhs._pieces[Queen] & 
             rhs._colors[White] &
-            (1LL << i)) return 'q';
-        if (rhs._pieces[Queen] & 
-            rhs._colors[Black] &
             (1LL << i)) return 'Q';
+        if (rhs._pieces[Queen] & 
+            rhs._colors[Black] &
+            (1LL << i)) return 'q';
         if (rhs._pieces[King] & 
             rhs._colors[White] &
-            (1LL << i)) return 'k';
+            (1LL << i)) return 'K';
         if (rhs._pieces[King] & 
             rhs._colors[Black] &
-            (1LL << i)) return 'K';
+            (1LL << i)) return 'k';
         return '.';
     };
                         
