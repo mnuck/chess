@@ -39,6 +39,12 @@ private:
              int guess,
              const unsigned int depth);
 
+    int PVS(const Board& board,
+            const unsigned int depth,
+            int alpha=INT_MIN,
+            int beta=INT_MAX,
+            const int pvHeight=1);
+
     int minimax(const Board& board,
                 const MinimaxPlayer player,
                 const unsigned int depth,

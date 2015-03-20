@@ -247,20 +247,25 @@ BitBoard Board::getUnsafe(const Color color) const
     const Color otherColor = Color(1 - color);
 
     const BitBoard otherKing = _pieces[King] & _colors[otherColor];
-    const BitBoard otherQueens = _pieces[Queen] & _colors[otherColor];
-    const BitBoard otherBishops = _pieces[Bishop] & _colors[otherColor];
-    const BitBoard otherRooks = _pieces[Rook] & _colors[otherColor];
+    const BitBoard otherBishopsQueens = (_pieces[Bishop] | _pieces[Queen]) & _colors[otherColor];
+    const BitBoard otherRooksQueens = (_pieces[Rook] | _pieces[Queen]) & _colors[otherColor];
     const BitBoard otherKnights = _pieces[Knight] & _colors[otherColor];
     const BitBoard otherPawns = _pieces[Pawn] & _colors[otherColor];
     const BitBoard allPieces = _colors[White] | _colors[Black];
 
     return
         Kings::GetInstance().getAttacksFrom(otherKing, 0LL) |
-        Queens::GetInstance().getAttacksFrom(otherQueens, allPieces, 0LL) |
-        Bishops::GetInstance().getAttacksFrom(otherBishops, allPieces, 0LL) |
-        Rooks::GetInstance().getAttacksFrom(otherRooks, allPieces, 0LL) |
+        Bishops::GetInstance().getAttacksFrom(otherBishopsQueens, allPieces, 0LL) |
+        Rooks::GetInstance().getAttacksFrom(otherRooksQueens, allPieces, 0LL) |
         Knights::GetInstance().getAttacksFrom(otherKnights, 0LL) |
         Pawns::GetInstance().getAttacksFrom(otherPawns, 0xFFFFFFFFFFFFFFFF, otherColor);    
+}
+
+
+bool Board::isUnsafe(Square square, Color color) const
+{
+    const Color attackColor = Color(1 - color);
+    return false;    
 }
 
 
@@ -415,7 +420,7 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
             return result; // nobody to castle with
 
         const BitBoard unsafe(getUnsafe(color));
-        if (getUnsafe(color) & kingInitialLoc)
+        if (unsafe & kingInitialLoc)
             return result;
 
         const BitBoard blocked(_colors[Black] | _colors[White]);
@@ -456,7 +461,7 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
             return result; // nobody  to castle with
 
         const BitBoard unsafe(getUnsafe(color));
-        if (getUnsafe(color) & kingInitialLoc)
+        if (unsafe & kingInitialLoc)
             return result;
 
         const BitBoard blocked(_colors[Black] | _colors[White]);

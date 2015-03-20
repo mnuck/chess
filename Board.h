@@ -45,6 +45,7 @@ private:
     Board applyInternalMove(const Move move) const;
 
     BitBoard getUnsafe(Color color) const;
+    bool isUnsafe(Square square, Color color) const;
 
     std::vector<Move> getKingMoves(const Color color) const;
     std::vector<Move> getQueenMoves(const Color color) const;
