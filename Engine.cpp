@@ -127,24 +127,29 @@ void Engine::ponder()
             for (Move& m : actions)
             {
                 Board brd(ponderBoard.applyMove(m));
-                m.score = MTDF(brd, m.score, depth);                
+                m.score = minimax(brd, Min, depth);
+//                m.score = MTDF(brd, m.score, depth);                
                 if (_ponderer_needs_new_board)
                     break;
             }
             if (_ponderer_needs_new_board)
                 break;
 
-            std::sort(actions.begin(), actions.end(),
-                      [&](const Move& a, const Move& b) -> bool
-                      { return a.score > b.score; });
-
+            if (_color == ponderBoard._toMove)
+                std::sort(actions.begin(), actions.end(),
+                          [&](const Move& a, const Move& b) -> bool
+                          { return a.score > b.score; });
+            else
+                std::sort(actions.begin(), actions.end(),
+                          [&](const Move& a, const Move& b) -> bool
+                          { return a.score < b.score; });
 
 //            for (int i = actions.size() - 1; i >= 0; --i)
 //                std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
 
             std::cout << "*** " << depth << " (" << actions[0].score << ") " 
                       << actions[0] << std::endl;
-/*
+
             _pv[0] = actions[0];
             std::cout << "PV: ";
             for (Move& m : _pv)
@@ -156,7 +161,7 @@ void Engine::ponder()
                 m = Move(0, 0);
             }
             std::cout << std::endl;            
-*/
+
             _ponderer_best_move = actions[0];
             _cv_best_move_ready.notify_all();
 
@@ -218,6 +223,11 @@ int Engine::minimax(const Board& board,
             ++_cutoffs;
             return node._upper;
         }
+        if (node._lower == node._upper)
+        {
+            ++_cutoffs;
+            return node._lower;
+        }
         alpha = std::max(alpha, node._lower);
         beta = std::min(beta, node._upper);
     }
@@ -238,7 +248,7 @@ int Engine::minimax(const Board& board,
         }
         else
         {
-/*            // move ordering here
+            // move ordering here
             for (Move& m : actions)
             {
                 Board brd(board.applyMove(m));
@@ -259,13 +269,22 @@ int Engine::minimax(const Board& board,
                     m.score += (Max == player) ? 10000 : -10000;
                 }
             }
-*/
+
             if (Max == player)
             {
-//                std::sort(actions.begin(), actions.end(),
-//                          [&](const Move& a, const Move& b) -> bool
-//                          { return a.score > b.score; });
+                std::sort(actions.begin(), actions.end(),
+                          [&](const Move& a, const Move& b) -> bool
+                          { return a.score > b.score; });
                 // PV nodes first
+                for (Move& m: actions)
+                {
+                    if (m == _pv[pvHeight])
+                    {
+                        std::swap(m, actions[0]);
+                        break;
+                    }
+                }
+
 /*                std::stable_sort(actions.begin(), actions.end(),
                                  [&](const Move& a, const Move& b) -> bool
                                  {
@@ -300,10 +319,18 @@ int Engine::minimax(const Board& board,
             }
             else // Min == player
             {
-//                std::sort(actions.begin(), actions.end(),
-//                          [&](const Move& a, const Move& b) -> bool
-//                          { return a.score < b.score; });
+                std::sort(actions.begin(), actions.end(),
+                          [&](const Move& a, const Move& b) -> bool
+                          { return a.score < b.score; });
                 // PV nodes first
+                for (Move& m: actions)
+                {
+                    if (m == _pv[pvHeight])
+                    {
+                        std::swap(m, actions[0]);
+                        break;
+                    }
+                }
 /*                std::stable_sort(actions.begin(), actions.end(),
                                  [&](const Move& a, const Move& b) -> bool
                                  {
