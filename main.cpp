@@ -46,14 +46,22 @@ int main(int argc, char* argv[])
             return test() ? 0 : 1;
         }
     }
-/*  
+
+//    Board b(Board::initial());
+    
+
+    /*
     std::string kiwipete = 
         "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
     std::stringstream kp(kiwipete);
+
     Board b(Board::parseEPD(kp));
-*/
+    */
+
+//    b = b.applyMove(Move(7, 6));
+//    b = b.applyMove(Move(59, 61));
 //    b = b.applyMove(Move(35, 52));
-//    b = b.applyMove(Move(16, 9));
+
 /*
     std::cout << (unsigned long long)b.perft(1) << std::endl;
     std::cout << b << std::endl;
@@ -66,15 +74,30 @@ int main(int argc, char* argv[])
         Board brd(b.applyMove(m));
         std::cout << m << ": " << (unsigned long long)brd.perft(0) << std::endl;
     }
+*/
+
+    std::string wat =
+        "r2qk1nr/1ppbpp1p/8/8/pBp5/5p2/4P2b/5B1K w kq -";
+    std::stringstream watss(wat);
+
+    Board b(Board::parseEPD(watss));
+    std::cout << b << std::endl;
+    
+    for (const Move& m: b.getMoves(White))
+    {
+        Board brd(b.applyExternalMove(m));
+        std::cout << m << ": " << (unsigned long long)brd.perft(0) << std::endl;
+    }
 
 
-    for (int depth = 0; depth < 6; ++depth)
+/*
+    for (int depth = 0; depth < 1; ++depth)
     {
         std::cout << depth << ": " 
                   << (unsigned long long)b.perft(depth) << std::endl;
     }
 */
-
+/*
     std::string p3 = 
         "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
     std::stringstream p3ss(p3);
@@ -85,7 +108,7 @@ int main(int argc, char* argv[])
         std::cout << depth << ": " 
                   << (unsigned long long)p3b.perft(depth) << std::endl;
     }
-  
+*/
 /*
     Board a(Board::initial());
     for (int depth = 0; depth < 8; ++depth)

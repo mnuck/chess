@@ -12,6 +12,7 @@ class Kings
 public:
     static Kings& GetInstance();
     virtual ~Kings();
+    BitBoard getAttacksFrom(Square kingSquare);
     BitBoard getAttacksFrom(BitBoard king,
                             BitBoard obstructions);
 protected:

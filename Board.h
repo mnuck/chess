@@ -31,7 +31,7 @@ public:
 
     std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true) const;
 
-    Board applyMove(const Move extMove) const;
+    Board applyExternalMove(const Move extMove) const;
 
     ZobristNumber getHash() const { return _hash; }
     uint64_t perft(const int depth);
@@ -42,7 +42,7 @@ public:
     bool inCheck(const Color color) const;
     bool inCheckmate(const Color color) const;
 private:
-    Board applyInternalMove(const Move move) const;
+    Board applyMove(const Move move) const;
 
     BitBoard getUnsafe(Color color) const;
     bool isUnsafe(Square square, Color color) const;
@@ -53,9 +53,16 @@ private:
     std::vector<Move> getKnightMoves(const Color color) const;
     std::vector<Move> getRookMoves(const Color color) const;
     std::vector<Move> getPawnMoves(const Color color) const;
+    std::vector<Move> getPawnDoublePushes(const Color color) const;
+    std::vector<Move> getPawnAttacks(const Color color) const;
+    std::vector<Move> getPawnEnPassants(const Color color) const;
     std::vector<Move> getCastlingMoves(const Color color) const;
 
-    std::vector<Move> getMoves(BitBoard movers, std::function<BitBoard (BitBoard)> targetGenerator) const;
+    std::vector<Move> getMoves(BitBoard movers, 
+                               std::function<BitBoard (BitBoard)> targetGenerator, 
+                               Piece movingPiece,
+                               bool doublePushing=false,
+                               bool enPassanting=false) const;
 
     static bool parse(const char square, Color& color, Piece& piece);
 
@@ -80,3 +87,6 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
 }
 
 #endif // __BOARD_H__
+
+
+// position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - moves a1b1 e8c8 e5d7

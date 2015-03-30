@@ -38,12 +38,12 @@ BitBoard Knights::generateAttacksFrom(Square index)
     
     return (x & notAFile) << 17  |
            (x & notAFile) >> 15  |
-           (x & notABFile) << 6  |
-           (x & notABFile) >> 10 |
+           (x & notABFile) >> 6  |
+           (x & notABFile) << 10 |
            (x & notHFile) << 15  |
            (x & notHFile) >> 17  |
-           (x & notGHFile) >> 6  |
-           (x & notGHFile) << 10;
+           (x & notGHFile) << 6  |
+           (x & notGHFile) >> 10;
 }
 
 

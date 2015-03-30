@@ -8,17 +8,16 @@ int Evaluate::getEvaluation(const Board& board, const Color color)
 {
     int result = 0;
 
-    if (board.inCheckmate(color))
+    if (board.inCheckmate(board._toMove))
     {
-        return -CHECKMATE;
-    }
-    if (board.inCheckmate(Color(1 - color)))
-    {
-        return CHECKMATE;
+        if (board._toMove == color)
+            return -CHECKMATE;
+        else
+            return CHECKMATE;
     }
 
     result += materialEval(std::ref(board));
-    result += pieceSquareEval(std::ref(board));
+//    result += pieceSquareEval(std::ref(board));
     if (Black == color)
         result *= -1;
     
@@ -67,12 +66,12 @@ int Evaluate::pieceSquareEval(const Board& board)
 
 Evaluate::Evaluate()
 {
-    _material[Pawn] = 100;
-    _material[Knight] = 300; // 320
-    _material[Bishop] = 300; // 330
-    _material[Rook] = 500;
-    _material[Queen] = 900;
-    _material[King] = 20000;
+    _material[Pawn] = 103;
+    _material[Knight] = 305; // 320
+    _material[Bishop] = 307; // 330
+    _material[Rook] = 511;
+    _material[Queen] = 913;
+    _material[King] = 20017;
 
     _pieceSquare[White][Pawn] = 
         {0,  0,  0,  0,  0,  0,  0,  0,

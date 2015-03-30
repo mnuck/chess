@@ -35,21 +35,16 @@ private:
 
     int heuristic(const Board& board);
 
-    int MTDF(const Board& board,
-             int guess,
-             const unsigned int depth);
-
-    int PVS(const Board& board,
-            const unsigned int depth,
-            int alpha=INT_MIN,
-            int beta=INT_MAX,
-            const int pvHeight=1);
+    int negamax(const Board& board,
+                const unsigned int depth,
+                int alpha=-CHECKMATE,
+                int beta=CHECKMATE);
 
     int minimax(const Board& board,
                 const MinimaxPlayer player,
                 const unsigned int depth,
-                int alpha=INT_MIN,
-                int beta=INT_MAX,
+                int alpha=-CHECKMATE,
+                int beta=CHECKMATE,
                 const int pvHeight=1);
 
 /*    int quiescent(const Board& board,

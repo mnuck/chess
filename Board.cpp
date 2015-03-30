@@ -54,7 +54,7 @@ Board& Board::operator=(const Board& that)
 
 Board::~Board() {}
 
-Board Board::applyMove(const Move extMove) const
+Board Board::applyExternalMove(const Move extMove) const
 {
     // moves that come from the outside don't have all the handy flags
     // so analyze it and set the proper flags
@@ -117,11 +117,11 @@ Board Board::applyMove(const Move extMove) const
         }
     }
 
-    return applyInternalMove(move);
+    return applyMove(move);
 }
 
 
-Board Board::applyInternalMove(const Move move) const
+Board Board::applyMove(const Move move) const
 {
     Board result(*this);
 
@@ -264,14 +264,41 @@ BitBoard Board::getUnsafe(const Color color) const
 
 bool Board::isUnsafe(Square square, Color color) const
 {
-    const Color attackColor = Color(1 - color);
-    return false;    
+    const Color otherColor = Color(1 - color);
+    const BitBoard target = (1LL << square);
+
+    const BitBoard allPieces = _colors[White] | _colors[Black];
+
+    const BitBoard otherKing = _pieces[King] & _colors[otherColor];
+    if (otherKing & Kings::GetInstance().getAttacksFrom(square))
+        return true;
+
+    const BitBoard otherKnights = _pieces[Knight] & _colors[otherColor];
+    if (otherKnights & Knights::GetInstance().getAttacksFrom(square))
+        return true;
+
+    const BitBoard otherPawns = _pieces[Pawn] & _colors[otherColor];
+    if (otherPawns & Pawns::GetInstance().getAttacksFrom(target, 0xFFFFFFFFFFFFFFFFLL, color))
+        return true;
+
+    const BitBoard otherBishopsQueens = (_pieces[Bishop] | _pieces[Queen]) & _colors[otherColor];
+    if (otherBishopsQueens & Bishops::GetInstance().getAttacksFrom(target, allPieces, 0LL))
+        return true;
+
+    const BitBoard otherRooksQueens = (_pieces[Rook] | _pieces[Queen]) & _colors[otherColor];
+    if (otherRooksQueens & Rooks::GetInstance().getAttacksFrom(target, allPieces, 0LL))
+        return true;
+    
+    return false;
 }
 
 
 std::vector<Move> Board::getMoves(
     BitBoard movers, 
-    std::function<BitBoard (BitBoard)> targetGenerator) const
+    std::function<BitBoard (BitBoard)> targetGenerator,
+    Piece movingPiece,
+    bool doublePushing,
+    bool enPassanting) const
 {
     std::vector<Move> result;
     result.reserve(400);
@@ -289,18 +316,72 @@ std::vector<Move> Board::getMoves(
 
             BitBoard targetBoard(1LL << target);
 
-            bool capturing((targetBoard & (_pieces[White] | _pieces[Black])) != 0LL);
-
-            if (((sourceBoard & _pieces[Pawn]) != 0LL) &&
-                ((targetBoard & 0xFF000000000000FF) != 0LL))
+            Piece capturedPiece(Pawn);
+            bool capturing((targetBoard & (_colors[White] | _colors[Black])) != 0LL);
+            if (capturing)
             {
-                result.emplace_back(Move(source, target, Bishop, capturing));
-                result.emplace_back(Move(source, target, Rook, capturing));
-                result.emplace_back(Move(source, target, Knight, capturing));
-                result.emplace_back(Move(source, target, Queen, capturing));
+                if (targetBoard & _pieces[Knight])
+                    capturedPiece = Knight;
+                else if (targetBoard & _pieces[Pawn])
+                    capturedPiece = Pawn;
+                else if (targetBoard & _pieces[Bishop])
+                    capturedPiece = Bishop;
+                else if (targetBoard & _pieces[Rook])
+                    capturedPiece = Rook;
+                else if (targetBoard & _pieces[Queen])
+                    capturedPiece = Queen;
+                else if (targetBoard & _pieces[King])
+                    capturedPiece = King;
             }
-            else
-                result.emplace_back(Move(source, target, capturing));
+
+            if (Pawn == movingPiece)
+            {
+                if (targetBoard & 0xFF000000000000FFLL)
+                {
+                    result.emplace_back(Move(source, target, 
+                                             Pawn, capturedPiece, Queen, 
+                                             true, capturing,
+                                             false, false, -1,
+                                             false, false));
+                    result.emplace_back(Move(source, target, 
+                                             Pawn, capturedPiece, Rook, 
+                                             true, capturing,
+                                             false, false, -1,
+                                             false, false));
+                    result.emplace_back(Move(source, target, 
+                                             Pawn, capturedPiece, Bishop, 
+                                             true, capturing,
+                                             false, false, -1,
+                                             false, false));
+                    result.emplace_back(Move(source, target, 
+                                             Pawn, capturedPiece, Knight, 
+                                             true, capturing,
+                                             false, false, -1,
+                                             false, false));
+                } 
+                else 
+                {
+                    int enPassantFile = -1;
+                    if (doublePushing)
+                    {
+                        enPassantFile = source % 8;
+                    }
+                    result.emplace_back(Move(source, target, 
+                                             Pawn, capturedPiece, Pawn, 
+                                             false, capturing,
+                                             doublePushing, enPassanting, enPassantFile,
+                                             false, false));
+                }
+
+            }
+            else 
+            {
+                result.emplace_back(Move(source, target, 
+                                         movingPiece, capturedPiece, Pawn, 
+                                         false, capturing,
+                                         false, false, -1,
+                                         false, false));
+            }
         }
     }
 
@@ -316,7 +397,7 @@ std::vector<Move> Board::getKingMoves(const Color color) const
         return Kings::GetInstance().getAttacksFrom(mover, _colors[color]);
     };
 
-    return getMoves(movers, targetGenerator);
+    return getMoves(movers, targetGenerator, King);
 }
 
 
@@ -332,7 +413,7 @@ std::vector<Move> Board::getQueenMoves(const Color color) const
                                                     _colors[color]);;
     };
 
-    return getMoves(movers, targetGenerator);
+    return getMoves(movers, targetGenerator, Queen);
 }
 
 
@@ -348,7 +429,7 @@ std::vector<Move> Board::getBishopMoves(const Color color) const
                                                      _colors[color]);;
     };
 
-    return getMoves(movers, targetGenerator);
+    return getMoves(movers, targetGenerator, Bishop);
 }
 
 
@@ -358,10 +439,10 @@ std::vector<Move> Board::getKnightMoves(const Color color) const
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
-    return Knights::GetInstance().getAttacksFrom(mover, _colors[color]);    
+        return Knights::GetInstance().getAttacksFrom(mover, _colors[color]);    
     };    
 
-    return getMoves(movers, targetGenerator);
+    return getMoves(movers, targetGenerator, Knight);
 }
 
 
@@ -377,7 +458,7 @@ std::vector<Move> Board::getRookMoves(const Color color) const
                                                    _colors[color]);;
     };    
 
-    return getMoves(movers, targetGenerator);
+    return getMoves(movers, targetGenerator, Rook);
 }
 
 
@@ -398,34 +479,102 @@ std::vector<Move> Board::getPawnMoves(const Color color) const
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
+        BitBoard blockers(_colors[color] | _colors[otherColor]);
         return 
-            Pawns::GetInstance().getAttacksFrom(mover, targets, color) |
-            Pawns::GetInstance().getMovesFrom(mover, _colors[color] | _colors[otherColor], color);
+            Pawns::GetInstance().getMovesFrom(mover, blockers, color);
     };    
 
-    return getMoves(movers, targetGenerator);
+    return getMoves(movers, targetGenerator, Pawn);
+}
+
+
+std::vector<Move> Board::getPawnAttacks(const Color color) const
+{
+    BitBoard movers = _pieces[Pawn] & _colors[color];
+    Color otherColor = Color(1 - color);
+    BitBoard targets = _colors[otherColor];
+
+    if (_epAvailable > -1)
+    {
+        Square epSquare(40 + _epAvailable);
+        if (Black == color)
+            epSquare -= 24;
+
+        targets |= (1LL << epSquare);
+    }
+
+    auto targetGenerator = [&] (BitBoard mover) -> BitBoard
+    {
+        return 
+            Pawns::GetInstance().getAttacksFrom(mover, targets, color);
+    };    
+
+    return getMoves(movers, targetGenerator, Pawn);
+}
+
+
+std::vector<Move> Board::getPawnEnPassants(const Color color) const
+{
+    std::vector<Move> empty;
+    if (-1 == _epAvailable)
+        return empty;
+    
+    BitBoard movers(_pieces[Pawn] & _colors[color]);
+    Square epSquare(40 + _epAvailable);
+    if (White == color)
+    {
+        movers &= 0x00000000FF000000;
+    } 
+    else
+    {
+        movers &= 0x000000FF00000000;
+        epSquare -= 24;
+    }
+    
+    BitBoard target(1LL << epSquare);
+
+    auto targetGenerator = [&] (BitBoard mover) -> BitBoard
+    {
+        return 
+            Pawns::GetInstance().getAttacksFrom(mover, target, color);
+    };    
+
+    return getMoves(movers, targetGenerator, Pawn, false, true);
+}
+
+
+std::vector<Move> Board::getPawnDoublePushes(const Color color) const
+{
+    BitBoard movers = _pieces[Pawn] & _colors[color];
+    Color otherColor = Color(1 - color);
+
+    auto targetGenerator = [&] (BitBoard mover) -> BitBoard
+    {
+        BitBoard blockers(_colors[color] | _colors[otherColor]);
+        return 
+            Pawns::GetInstance().getDoublePushesFrom(mover, blockers, color);
+    };    
+
+    return getMoves(movers, targetGenerator, Pawn, true, false);
 }
 
 
 std::vector<Move> Board::getCastlingMoves(const Color color) const
 {
     std::vector<Move> result;
-    const BitBoard kingInitialLoc((White == color) ? 
-                                  0x0000000000000008LL :
-                                  0x0800000000000000LL);
 
     if (White == color)
     {
         if (WKingMoved() || (WKRookMoved() && WQRookMoved()))
             return result; // nobody to castle with
 
-        const BitBoard unsafe(getUnsafe(color));
-        if (unsafe & kingInitialLoc)
+        Square kingLoc(3);
+        if (isUnsafe(kingLoc, White))
             return result;
 
+        const BitBoard unsafe(getUnsafe(color));
         const BitBoard blocked(_colors[Black] | _colors[White]);
         const BitBoard noGo(blocked | unsafe);
-        Square kingLoc(3);
         if (!WKRookMoved())
         {
             const BitBoard path(6LL);
@@ -460,13 +609,13 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
         if (BKingMoved() || (BKRookMoved() && BQRookMoved()))
             return result; // nobody  to castle with
 
-        const BitBoard unsafe(getUnsafe(color));
-        if (unsafe & kingInitialLoc)
+        Square kingLoc(59);
+        if (isUnsafe(kingLoc, Black))
             return result;
 
+        const BitBoard unsafe(getUnsafe(color));
         const BitBoard blocked(_colors[Black] | _colors[White]);
         const BitBoard noGo(blocked | unsafe);
-        Square kingLoc(59);
         if (!BKRookMoved())
         {
             const BitBoard path(6LL << 56);
@@ -503,20 +652,20 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
 
 bool Board::inCheck(const Color color) const
 {
-    return (getUnsafe(color) & _pieces[King] & _colors[color]);
+    BitBoard kingBoard(_pieces[King] & _colors[color]);
+    Square kingSquare(__builtin_ffsll(kingBoard) - 1);
+    return isUnsafe(kingSquare, color);
 }
 
 
 bool Board::inCheckmate(const Color color) const
 {
-    if ((_pieces[King] & _colors[color]) == 0LL)
+    BitBoard kingBoard(_pieces[King] & _colors[color]);
+
+    if (0LL == kingBoard)
         return true;
 
-    // FIXME make a version of getUnsafe that only cares about
-    // the king's square. if that square is unsafe, then we're
-    // unsafe. so maybe early checks and bail as soon as we know.
-
-    if (getUnsafe(color) & _pieces[King] & _colors[color])
+    if (inCheck(color))
     {
         auto moves = getMoves(color, false);
         if (moves.size() == 0)
@@ -535,21 +684,28 @@ std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate) 
         return result;
     }
 
+    std::vector<Move> castles(getCastlingMoves(color));
     std::vector<Move> kings(getKingMoves(color));
     std::vector<Move> queens(getQueenMoves(color));
     std::vector<Move> bishops(getBishopMoves(color));
     std::vector<Move> knights(getKnightMoves(color));
     std::vector<Move> rooks(getRookMoves(color));
-    std::vector<Move> pawns(getPawnMoves(color));
-    std::vector<Move> castles(getCastlingMoves(color));
+    std::vector<Move> pawnsMove(getPawnMoves(color));
+    std::vector<Move> pawnsDP(getPawnDoublePushes(color));
+    std::vector<Move> pawnsAttk(getPawnAttacks(color));
+    std::vector<Move> pawnsEP(getPawnEnPassants(color));
+    
 
-    result.insert(result.end(), kings.begin(), kings.end());
+    result.insert(result.end(), castles.begin(), castles.end());
     result.insert(result.end(), queens.begin(), queens.end());
+    result.insert(result.end(), rooks.begin(), rooks.end());
     result.insert(result.end(), bishops.begin(), bishops.end());
     result.insert(result.end(), knights.begin(), knights.end());
-    result.insert(result.end(), rooks.begin(), rooks.end());
-    result.insert(result.end(), pawns.begin(), pawns.end());
-    result.insert(result.end(), castles.begin(), castles.end());
+    result.insert(result.end(), kings.begin(), kings.end());
+    result.insert(result.end(), pawnsMove.begin(), pawnsMove.end());
+    result.insert(result.end(), pawnsDP.begin(), pawnsDP.end());
+    result.insert(result.end(), pawnsAttk.begin(), pawnsAttk.end());
+    result.insert(result.end(), pawnsEP.begin(), pawnsEP.end());
 
     result.erase(
         std::remove_if(
@@ -742,6 +898,12 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
 {
     auto charAt = [&](size_t i) -> char
     {
+        if (rhs._pieces[Knight] & 
+            rhs._colors[White] &
+            (1LL << i)) return 'N';
+        if (rhs._pieces[Knight] & 
+            rhs._colors[Black] &
+            (1LL << i)) return 'n';
         if (rhs._pieces[Pawn] & 
             rhs._colors[White] &
             (1LL << i)) return 'P';
@@ -754,12 +916,6 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
         if (rhs._pieces[Rook] & 
             rhs._colors[Black] &
             (1LL << i)) return 'r';
-        if (rhs._pieces[Knight] & 
-            rhs._colors[White] &
-            (1LL << i)) return 'N';
-        if (rhs._pieces[Knight] & 
-            rhs._colors[Black] &
-            (1LL << i)) return 'n';
         if (rhs._pieces[Bishop] & 
             rhs._colors[White] &
             (1LL << i)) return 'B';

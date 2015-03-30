@@ -44,12 +44,17 @@ BitBoard Kings::generateOneStepsFrom(Square index)
         (eastEdge >> 9) ;
 }
 
+BitBoard Kings::getAttacksFrom(Square kingSquare)
+{
+    return _attacks[kingSquare];
+}
+
 
 BitBoard Kings::getAttacksFrom(BitBoard king,
                                BitBoard obstructions)
 {
-    int kingSquare = __builtin_ffsll(king) - 1;    
-    return _attacks[kingSquare] & ~obstructions;
+    Square kingSquare = __builtin_ffsll(king) - 1;
+    return ~obstructions & getAttacksFrom(kingSquare);
 }
 
 }

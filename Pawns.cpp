@@ -46,33 +46,32 @@ BitBoard Pawns::getMovesFrom(BitBoard pawns,
                              BitBoard blockers,
                              Color color)
 {
-	BitBoard oneStep, twoStep, homeRow, fwdOne;
-	if (White == color)
-	{
-		oneStep = (pawns << 8) & ~blockers;
-
-		homeRow = 0x000000000000FF00LL;
-		fwdOne  = 0x0000000000FF0000LL;
-
-		twoStep =
-			~blockers &
-			((fwdOne & oneStep) << 8) &
-			((homeRow & pawns) << 16);
-	}
-	else
-	{
-		oneStep = (pawns >> 8) & ~blockers;
-
-		homeRow = 0x00FF000000000000LL;
-		fwdOne  = 0x0000FF0000000000LL;
-
-		twoStep =
-			~blockers &
-			((fwdOne & oneStep) >> 8) &
-			((homeRow & pawns) >> 16);
-	}
-
-    return oneStep | twoStep;
+    BitBoard clear(~blockers);
+    if (White == color)
+        return clear & (pawns << 8);
+    else
+        return clear & (pawns >> 8);
 }
+
+BitBoard Pawns::getDoublePushesFrom(BitBoard pawns,
+                                    BitBoard blockers,
+                                    Color color)
+{
+    BitBoard clear(~blockers);
+    if (White == color)
+    {
+        pawns &= 0x000000000000FF00LL;
+        if (clear & (pawns << 8))
+            return clear & (pawns << 16);
+    } 
+    else
+    {
+        pawns &= 0x00FF000000000000LL;
+        if (clear & (pawns >> 8))
+            return clear & (pawns >> 16);
+    }
+    return 0LL;
+}
+
 
 }

@@ -18,6 +18,9 @@ public:
     BitBoard getMovesFrom(BitBoard pawns,
                           BitBoard blockers,
                           Color color);
+    BitBoard getDoublePushesFrom(BitBoard pawns,
+                                 BitBoard blockers,
+                                 Color color);
 
 protected:
     Pawns();
