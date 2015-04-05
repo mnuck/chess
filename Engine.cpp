@@ -13,20 +13,10 @@
 namespace BixNix
 {
 
-
 void Engine::end() 
 {
-    _ponderer_done = true;
-    if (_ponderer != nullptr)
-    {
-        if (_ponderer->joinable())
-        {
-            _ponderer->join();
-        }
-        delete _ponderer;
-        _ponderer = nullptr;
-    }
-
+    stopSearch();
+    
     std::cout << _time << " time left" << std::endl;
 
     auto end_time = std::chrono::system_clock::now();
@@ -34,31 +24,32 @@ void Engine::end()
         std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
     std::cout << diff.count() << " seconds "
-              << _node_expansions / static_cast<double>(diff.count()) << std::endl;
+              << _node_expansions / static_cast<double>(diff.count()) << " per second" << std::endl;
 
     std::cout << _node_expansions << " node expansions\n"
               << _cutoffs << " cutoffs\n"
               << _cutoffs / static_cast<double>(_node_expansions) << " cutoff ratio" << std::endl;
 
-    std::cout << _cache_collisions << " cache collisions\n"
-              << _cache_hits << " cache hits\n"
-              << _cache_misses << " cache misses\n"
-              << _cache_hits / static_cast<double>(_cache_hits + _cache_misses) 
-              << " ratio" << std::endl;
+    std::cout << _ttable._collisions << " cache collisions\n"
+              << _ttable._hits << " cache hits\n"
+              << _ttable._misses << " cache misses\n"
+              << _ttable._hits / static_cast<double>(_ttable._hits + _ttable._misses) 
+              << " cache hit ratio" << std::endl;
 
-    unsigned long long occupied = 0;
-
-    for (size_t i = 0; i < TTABLE_SIZE; ++i)
-        if (_TTable[i]._hash != 0xFFFFFFFFFFFFFFFFLL)
-            ++occupied;
-    std::cout << occupied << " cache slots occupied\n"
-              << TTABLE_SIZE << " cache slots total\n"
-              << occupied / static_cast<double>(TTABLE_SIZE) << " occupancy" << std::endl;
+    size_t occupied(_ttable.getOccupancy());
+    size_t ttableSize(_ttable.getSize());
+    
+    std::cout << (long)occupied << " cache slots occupied\n"
+              << (long)ttableSize << " cache slots total\n"
+              << occupied / static_cast<double>(ttableSize) << " occupancy" << std::endl;
 }
 
 
 Move Engine::getMove()
 {
+    stopSearch(); // stop pondering
+    startSearch(); // start searching
+
     using namespace std::chrono;
     int runTime = std::min((int)_time / 10, 20);
     auto startTime = steady_clock::now();
@@ -68,13 +59,13 @@ Move Engine::getMove()
 
     std::unique_lock<std::mutex> lock(_cvMutex);
     while (std::cv_status::no_timeout == 
-            _cv_best_move_ready.wait_until(lock, endTime))
+            _best_move_ready.wait_until(lock, endTime))
     {
         auto timeSplit = steady_clock::now();
         int diff = duration_cast<microseconds>(timeSplit - startTime).count();
         splits.push_back(diff);
 
-        if (_ponderer_best_move.score >= CHECKMATE)
+        if (_best_move.score >= CHECKMATE)
         {
             break;
         }
@@ -93,397 +84,253 @@ Move Engine::getMove()
         }
     }
 
-    Move move = _ponderer_best_move;
+    stopSearch();
+    Move move = _best_move;
     _board = _board.applyMove(move);
-    _ponderer_needs_new_board = true; 
+
     std::cout << "sending (" << move.score << ") " << move << " " << std::endl;
     std::cout << _board << std::endl;
+
+    startSearch(); // start pondering
    
     return move;
 }
 
 
-void Engine::ponder()
+void Engine::search()
 {
-    Board ponderBoard;
-    while (!_ponderer_done)
+    Board searchBoard(_board);
+    std::vector<Move> actions(searchBoard.getMoves(searchBoard._toMove));
+    trimTrifoldRepetition(searchBoard, actions);
+    if (actions.size() == 0)
+        return;
+
+    _best_move = actions[0];
+
+    unsigned int depth = 0;
+    while (!_search_stop)
     {
-        if (_ponderer_needs_new_board)
+        if (depth > 50)
+            return;
+
+        for (Move& m : actions)
         {
-            ponderBoard = _board;
-            _ponderer_needs_new_board = false;
+            Board brd(searchBoard.applyMove(m));
+            m.score = - negamax(brd, depth);
+            if (_search_stop)
+                return;
         }
 
-        std::vector<Move> actions(ponderBoard.getMoves(ponderBoard._toMove));
-        trimTrifoldRepetition(ponderBoard, actions);
+        std::sort(actions.begin(), actions.end(),
+                  [&](const Move& a, const Move& b) -> bool
+                  { return a.score > b.score; });
 
-        unsigned int depth = 0;
-        while (!_ponderer_done)
+        _best_move = actions[0];
+        _best_move_ready.notify_all();
+/*
+        for (int i = actions.size() - 1; i >= 0; --i)
+            std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
+        
+        std::cout << "*** " << depth << " (" << actions[0].score << ") " 
+                  << actions[0] << std::endl;
+*/
+        _pv[0] = actions[0];
+        std::cout << depth << " (" << actions[0].score << ") PV: ";
+        for (Move& m : _pv)
         {
-            if (depth > 50)
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            
-
-            for (Move& m : actions)
-            {
-                Board brd(ponderBoard.applyMove(m));
-                m.score = - negamax(brd, depth);
-//                m.score = minimax(brd, Min, depth);
-                if (_ponderer_needs_new_board)
-                    break;
-            }
-            if (_ponderer_needs_new_board)
+            if (Move(0, 0) == m)
                 break;
-
-            if (ponderBoard._toMove == _color)
-                std::sort(actions.begin(), actions.end(),
-                          [&](const Move& a, const Move& b) -> bool
-                          { return a.score > b.score; });
             else
-                std::sort(actions.begin(), actions.end(),
-                          [&](const Move& a, const Move& b) -> bool
-                          { return a.score < b.score; });
-
-//            for (int i = actions.size() - 1; i >= 0; --i)
-//                std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
-
-//            std::cout << "*** " << depth << " (" << actions[0].score << ") " 
-//                      << actions[0] << std::endl;
-
-            _pv[0] = actions[0];
-            std::cout << depth << " (" << actions[0].score << ") PV: ";
-            for (Move& m : _pv)
-            {
-                if (Move(0, 0) == m)
-                    break;
-                else
-                    std::cout << m << " ";
-                m = Move(0, 0);
-            }
-            std::cout << std::endl;            
-
-            _ponderer_best_move = actions[0];
-            _cv_best_move_ready.notify_all();
-
-            ++depth;
+                std::cout << m << " ";
+            m = Move(0, 0);
         }
+        std::cout << std::endl;
+
+        ++depth;
     }
 }
 
 
-
-int Engine::negamax(const Board& board,
+int Engine::negamax(Board& board,
                     const unsigned int depth,
                     int alpha, 
-                    int beta)
+                    int beta,
+                    size_t pvHeight)
 {
     ++_node_expansions;
-    if (_ponderer_done || _ponderer_needs_new_board)
+    if (_search_stop)
         return 0;
     
     int result(-CHECKMATE);
 
+    if (_ttable.get(board.getHash(), depth, alpha, beta, result))
+        return result;
+
     if (0 == depth)
     {
         result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
+//        result = quiescent(board, alpha, beta);
     } 
     else 
     {
         std::vector<Move> actions(board.getMoves(board._toMove));
         trimTrifoldRepetition(board, actions);
-        if (actions.size() == 0)
+
+        for (Move& m: actions)
         {
-            if (!board.inCheckmate(board._toMove))
+            if (m == _pv[pvHeight])
             {
-                result = 0; // stalemate
+                std::swap(m, actions[0]);
+                break;
             }
+        }
+
+        if (actions.size() == 0 && !board.inCheckmate(board._toMove))
+        {
+            result = 0; // stalemate
         }
         else
         {
             for (Move& m: actions)
-            {
+            {            
                 if (result >= beta)
                 {
                     ++_cutoffs;
                     break;
                 }
-            
                 Board brd(board.applyMove(m));
-                m.score = - negamax(brd, depth - 1, -beta, -alpha);
-                if (_ponderer_done || _ponderer_needs_new_board)
+                m.score = - negamax(brd, depth - 1, -beta, -alpha, pvHeight + 1);
+                if (_search_stop)
                     return 0;
-            
+
                 result = std::max(result, m.score);
-                alpha = std::max(alpha, result);                
+                if (result > alpha)
+                {
+                    alpha = result;
+                    _pv[pvHeight] = m;
+                }
             }
         }
     }
 
+    _ttable.set(board.getHash(), result, depth, alpha, beta);
     return result;
 }
-    
 
-int Engine::minimax(const Board& board,
-                    const MinimaxPlayer player,
-                    const unsigned int depth,
-                    int alpha,
-                    int beta,
-                    const int pvHeight)
+
+int Engine::quiescent(Board& board,
+                      int alpha,
+                      int beta)
 {
     ++_node_expansions;
-    if (_ponderer_done || _ponderer_needs_new_board)
+    if (_search_stop)
         return 0;
 
-    int result((Max == player) ? INT_MIN : INT_MAX);
-    auto mm = std::bind(
-        &Engine::minimax, this, 
-        std::placeholders::_1, 
-        MinimaxPlayer(1 - player), depth - 1,
-        std::placeholders::_2, std::placeholders::_3,
-        pvHeight + 1);
+    int result;
+    if (_ttable.get(board.getHash(), 0, alpha, beta, result))
+        return result;
 
-    MTDFTTNode& node = _TTable[board.getHash() % TTABLE_SIZE];
-    if (node._hash == board.getHash() && node._depth >= depth)
+    result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
+    if (result >= beta)
+        return result;
+    alpha = std::max(alpha, result);
+
+    std::vector<Move> actions(board.getMoves(board._toMove));
+    trimTrifoldRepetition(board, actions);
+    if (actions.size() == 0)
     {
-        ++_cache_hits;
-        if (node._lower >= beta)
+        if (!board.inCheckmate(board._toMove))
         {
-            ++_cutoffs;
-            return node._lower;            
+            return 0;
         }
-        if (node._upper <= alpha)
-        {
-            ++_cutoffs;
-            return node._upper;
-        }
-        if (node._lower == node._upper)
-        {
-            ++_cutoffs;
-            return node._lower;
-        }
-        alpha = std::max(alpha, node._lower);
-        beta = std::min(beta, node._upper);
     }
     else
-        ++_cache_misses;
-
-    if (0 == depth)
     {
-        result = heuristic(board);
-    }
-    else 
-    {
-        std::vector<Move> actions(board.getMoves(board._toMove));
-        trimTrifoldRepetition(board, actions);
-        if (actions.size() == 0)
+        for (Move& m: actions)
         {
-            if (!board.inCheckmate(board._toMove))
-            {
-                result = 0; // stalemate
-            }
-        }
-        else
-        {
-            // move ordering here
-/*            for (Move& m : actions)
-            {
-                Board brd(board.applyMove(m));
-                const MTDFTTNode& bNode = _TTable[brd.getHash() % TTABLE_SIZE];
-                if (bNode._hash == brd.getHash() && node._depth >= depth)
-                {
-                    if (bNode._upper == INT_MAX)
-                        m.score = bNode._lower;
-                    if (bNode._lower == INT_MIN)
-                        m.score = bNode._upper;
-                }
-                else
-                {
-                    m.score = heuristic(brd);
-                }
-                if (m.getCapturing())
-                {
-                    m.score += (Max == player) ? 10000 : -10000;
-                }
-            }
-*/
-            if (Max == player)
-            {
-//                std::sort(actions.begin(), actions.end(),
-//                          [&](const Move& a, const Move& b) -> bool
-//                          { return a.score > b.score; });
-                // PV nodes first
-                for (Move& m: actions)
-                {
-                    if (m == _pv[pvHeight])
-                    {
-                        std::swap(m, actions[0]);
-                        break;
-                    }
-                }
+            if (m.score >= beta)
+                return beta;
 
-/*                std::stable_sort(actions.begin(), actions.end(),
-                                 [&](const Move& a, const Move& b) -> bool
-                                 {
-                                     auto itA = std::find(_pv.begin(),_pv.end(), a);
-                                     auto itB = std::find(_pv.begin(),_pv.end(), b);
-                                     bool foundA = (itA != _pv.end());
-                                     bool foundB = (itB != _pv.end());
-                                     return foundA && !foundB;
-                                 });
-*/
-                int a = alpha;
-                for (Move& m: actions)
-                {
-                    if (result >= beta)
-                    {
-                        ++_cutoffs;
-                        break;
-                    }
+            if (!m.getCapturing())
+                continue;
+            
+            Board brd(board.applyMove(m));
+            m.score = - quiescent(brd, -beta, -alpha);
+            if (_search_stop)
+                return 0;
 
-                    Board brd(board.applyMove(m));
-                    m.score = mm(brd, a, beta);
-                    if (_ponderer_done || _ponderer_needs_new_board)
-                        return 0;
-
-                    result = std::max(result, m.score);
-                    if (result > a)
-                    {
-                        a = result;
-                        _pv[pvHeight] = m;
-                    }
-                }
-            }
-            else // Min == player
-            {
-//                std::sort(actions.begin(), actions.end(),
-//                          [&](const Move& a, const Move& b) -> bool
-//                          { return a.score < b.score; });
-                // PV nodes first
-                for (Move& m: actions)
-                {
-                    if (m == _pv[pvHeight])
-                    {
-                        std::swap(m, actions[0]);
-                        break;
-                    }
-                }
-/*                std::stable_sort(actions.begin(), actions.end(),
-                                 [&](const Move& a, const Move& b) -> bool
-                                 {
-                                     auto itA = std::find(_pv.begin(),_pv.end(), a);
-                                     auto itB = std::find(_pv.begin(),_pv.end(), b);
-                                     bool foundA = (itA != _pv.end());
-                                     bool foundB = (itB != _pv.end());
-                                     return foundA && !foundB;
-                                 });
-*/
-                int b = beta;
-                for (Move& m: actions)
-                {
-                    if (result <= alpha)
-                    {
-                        ++_cutoffs;
-                        break;
-                    }
-
-                    Board brd(board.applyMove(m));
-                    m.score = mm(brd, alpha, b);                    
-                    if (_ponderer_done || _ponderer_needs_new_board)
-                        return 0;
-
-                    result = std::min(result, m.score);
-                    if (result < b)
-                    {
-                        b = result;
-                        _pv[pvHeight] = m;
-                    }
-                    b = std::min(result, b);
-                }
-            }
+            alpha = std::max(alpha, m.score);
         }
     }
-    
-    MTDFTTNode& store = _TTable[board.getHash() % TTABLE_SIZE];
-    if (store._hash != 0xFFFFFFFFFFFFFFFFLL && store._hash != board.getHash())
-        ++_cache_collisions;
 
-    if (board.getHash() != store._hash || store._depth < depth)
-    {
-        store._hash = board._hash;
-        store._lower = INT_MIN;
-        store._upper = INT_MAX;
-        store._depth = depth;
-        if (result < beta)
-            store._lower = result;
-        if (result > alpha)
-            store._upper = result;
-    }
-
-    return result;
+    _ttable.set(board.getHash(), alpha, 0, alpha, beta);
+    return alpha;
 }
-
 
 
 Engine::Engine():
-    _ponderer(nullptr),
-    _ponderer_best_move(Move()),
+    _searcher(nullptr),
+    _best_move(Move()),
     _node_expansions(0),
-    _cutoffs(0),
-    _cache_hits(0),
-    _cache_misses(0),
-    _cache_collisions(0),
-    _TTable(new MTDFTTNode[TTABLE_SIZE])
+    _cutoffs(0)
 {
-    
+    _ttable.resize(TTSIZE);   
 }
+
 
 Engine::~Engine()
 {
-    if (nullptr == _TTable)
-    {
-        delete [] _TTable;
-        _TTable = nullptr;
-    }
+    stopSearch();
 }
-    
-void Engine::init(Color color)
-{
-    _heuristic_runs = 0;
-    _start_time = std::chrono::system_clock::now();
 
-    if (_ponderer == nullptr)
+
+void Engine::startSearch()
+{
+    if (_searcher == nullptr)
     {
         srand(time(NULL));
+        for (Move& m: _pv)
+            m = Move(0,0);
+        _search_stop = false;
+        _searcher = new std::thread(&Engine::search, this);        
+    }    
+}
 
-        _board = Board::initial();
-        _color = color;
-
-        _ponderer_done = false;
-        _ponderer_needs_new_board = true;
-        _ponderer = new std::thread(&Engine::ponder, this);        
+    
+void Engine::stopSearch()
+{
+    _search_stop = true;
+    if (_searcher != nullptr)
+    {
+        if (_searcher->joinable())
+        {
+            _searcher->join();
+        }
+        delete _searcher;
+        _searcher = nullptr;
     }
 }
 
 
-int Engine::heuristic(const Board& board)
+void Engine::init(Color color, float time)
 {
-    ++_heuristic_runs;
-    return Evaluate::GetInstance().getEvaluation(std::ref(board), _color);
-}
-
-
-void Engine::reportTimeLeft(float time)
-{
+    _color = color;
     _time = time;
+
+    _start_time = std::chrono::system_clock::now();
+
+    stopSearch();
+    _board = Board::initial();
+    startSearch();
 }
 
 
-void Engine::reportMove(Move move)
+void Engine::reportMove(Move move, float time)
 {
     std::cout << "receiving " << move << " " << std::endl;
+    _time = time;
     _board = _board.applyExternalMove(move);
     std::cout << _board << std::endl;
-    _ponderer_needs_new_board = true;
 }
 
 

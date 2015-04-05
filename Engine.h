@@ -12,7 +12,7 @@
 
 #include "Enums.h"
 #include "Board.h"
-#include "MTDFTTNode.h"
+#include "TranspositionTable.h"
 
 namespace BixNix
 {
@@ -23,37 +23,27 @@ public:
     Engine();
     ~Engine();
 
-    void init(Color color);
+    void init(Color color, float time);
     void end();
 
-    void reportTimeLeft(float time);
-    void reportMove(Move move);
-    
+    void reportMove(Move move, float time);    
     Move getMove();
 
 private:
 
-    int heuristic(const Board& board);
-
-    int negamax(const Board& board,
-                const unsigned int depth,
-                int alpha=-CHECKMATE,
-                int beta=CHECKMATE);
-
-    int minimax(const Board& board,
-                const MinimaxPlayer player,
+    int negamax(Board& board,
                 const unsigned int depth,
                 int alpha=-CHECKMATE,
                 int beta=CHECKMATE,
-                const int pvHeight=1);
+                size_t pvHeight=1);
 
-/*    int quiescent(const Board& board,
-                  const MinimaxPlayer player,
+    int quiescent(Board& board,
                   int alpha,
                   int beta);
-*/
 
-    void ponder();
+    void startSearch();
+    void stopSearch();
+    void search();
 
     void trimTrifoldRepetition(const Board& board, std::vector<Move>& moves) const;
 
@@ -64,23 +54,18 @@ private:
     static const int HEIGHTMAX = 1000;
     std::array<Move, HEIGHTMAX> _pv;
 
-    std::thread* _ponderer;
-    bool _ponderer_done;
-    bool _ponderer_needs_new_board;
-    Move _ponderer_best_move;
-    std::condition_variable _cv_best_move_ready;
+    std::thread* _searcher;
+    bool _search_stop;
+    Move _best_move;
+    std::condition_variable _best_move_ready;
     std::mutex _cvMutex;
 
     unsigned long long _node_expansions;
     unsigned long long _cutoffs;
-    unsigned long long _heuristic_runs;
     std::chrono::time_point<std::chrono::system_clock> _start_time;
-    unsigned long long _cache_hits;
-    unsigned long long _cache_misses;
-    unsigned long long _cache_collisions;
     
-    static const int TTABLE_SIZE = 16777216;
-    MTDFTTNode* _TTable;
+    static const int TTSIZE = 16777216;
+    TranspositionTable _ttable;
 };
 
 }

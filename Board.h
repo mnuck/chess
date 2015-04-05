@@ -29,20 +29,21 @@ public:
     Board& operator=(const Board& that);
     ~Board();
 
-    std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true) const;
+    std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true);
 
     Board applyExternalMove(const Move extMove) const;
 
     ZobristNumber getHash() const { return _hash; }
+    TerminalState getTerminalState() const { return _terminalState; }
     uint64_t perft(const int depth);
 
     static Board initial();
     static Board parseEPD(std::istream& inFile);
 
     bool inCheck(const Color color) const;
-    bool inCheckmate(const Color color) const;
-private:
+    bool inCheckmate(const Color color);
     Board applyMove(const Move move) const;
+private:
 
     BitBoard getUnsafe(Color color) const;
     bool isUnsafe(Square square, Color color) const;
@@ -80,6 +81,7 @@ private:
     Color _toMove;
     ZobristNumber _hash;
     int  _epAvailable;
+    TerminalState _terminalState;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Board& rhs);

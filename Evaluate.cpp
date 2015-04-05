@@ -3,8 +3,7 @@
 namespace BixNix
 {
 
-
-int Evaluate::getEvaluation(const Board& board, const Color color)
+int Evaluate::getEvaluation(Board& board, const Color color)
 {
     int result = 0;
 
@@ -17,7 +16,7 @@ int Evaluate::getEvaluation(const Board& board, const Color color)
     }
 
     result += materialEval(std::ref(board));
-//    result += pieceSquareEval(std::ref(board));
+    result += pieceSquareEval(std::ref(board));
     if (Black == color)
         result *= -1;
     
@@ -67,8 +66,8 @@ int Evaluate::pieceSquareEval(const Board& board)
 Evaluate::Evaluate()
 {
     _material[Pawn] = 103;
-    _material[Knight] = 305; // 320
-    _material[Bishop] = 307; // 330
+    _material[Knight] = 325; // 320
+    _material[Bishop] = 337; // 330
     _material[Rook] = 511;
     _material[Queen] = 913;
     _material[King] = 20017;
@@ -92,7 +91,7 @@ Evaluate::Evaluate()
          10, 10, 20, 30, 30, 20, 10, 10,
          50, 50, 50, 50, 50, 50, 50, 50,
          0,  0,  0,  0,  0,  0,  0,  0};
-    
+    /*
     _pieceSquare[White][Knight] =
         {-50,-40,-30,-30,-30,-30,-40,-50,
          -40,-20,  0,  0,  0,  0,-20,-40,
@@ -191,7 +190,7 @@ Evaluate::Evaluate()
          -30,-40,-40,-50,-50,-40,-40,-30,
          -30,-40,-40,-50,-50,-40,-40,-30,
          -20,-30,-30,-40,-40,-30,-30,-20,
-         -10,-20,-20,-20,-20,-20,-20,-10};
+         -10,-20,-20,-20,-20,-20,-20,-10}; */
 }
 
 

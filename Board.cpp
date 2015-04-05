@@ -8,7 +8,6 @@
 #include "Kings.h"
 #include "Knights.h"
 #include "Pawns.h"
-#include "Queens.h"
 #include "Rooks.h"
 #include "Zobrist.h"
 
@@ -19,7 +18,8 @@ Board::Board() :
     _dirty(0LL),
     _toMove(White),
     _hash(0),
-    _epAvailable(-1)
+    _epAvailable(-1),
+    _terminalState(Running)
 {
     _pieces.fill(0LL);
     _colors.fill(0LL);
@@ -33,7 +33,8 @@ Board::Board(const Board& that):
     _dirty(that._dirty),
     _toMove(that._toMove),
     _hash(that._hash),
-    _epAvailable(that._epAvailable)
+    _epAvailable(that._epAvailable),
+    _terminalState(that._terminalState)
 {
     
 }
@@ -48,6 +49,7 @@ Board& Board::operator=(const Board& that)
     _toMove = that._toMove;
     _hash = that._hash;
     _epAvailable = that._epAvailable;
+    _terminalState = that._terminalState;
     return *this;
 }
 
@@ -124,6 +126,9 @@ Board Board::applyExternalMove(const Move extMove) const
 Board Board::applyMove(const Move move) const
 {
     Board result(*this);
+
+    if (_terminalState != Running)
+        return result;
 
     std::copy(result._moves.begin() + 1,
               result._moves.end(),
@@ -316,9 +321,11 @@ std::vector<Move> Board::getMoves(
 
             BitBoard targetBoard(1LL << target);
 
-            Piece capturedPiece(Pawn);
+            Piece capturedPiece(Pawn); // covers en passant
             bool capturing((targetBoard & (_colors[White] | _colors[Black])) != 0LL);
-            if (capturing)
+            if (enPassanting)
+                capturing = true;
+            else if (capturing)
             {
                 if (targetBoard & _pieces[Knight])
                     capturedPiece = Knight;
@@ -408,9 +415,14 @@ std::vector<Move> Board::getQueenMoves(const Color color) const
 
     auto targetGenerator = [&] (BitBoard mover) -> BitBoard
     {
-        return Queens::GetInstance().getAttacksFrom(mover,
-                                                    _colors[otherColor],
-                                                    _colors[color]);;
+        return 
+            Rooks::GetInstance().getAttacksFrom(mover,
+                                                _colors[otherColor],
+                                                _colors[color])
+            |
+            Bishops::GetInstance().getAttacksFrom(mover,
+                                                  _colors[otherColor],
+                                                  _colors[color]);
     };
 
     return getMoves(movers, targetGenerator, Queen);
@@ -658,32 +670,48 @@ bool Board::inCheck(const Color color) const
 }
 
 
-bool Board::inCheckmate(const Color color) const
+bool Board::inCheckmate(const Color color)
 {
+    if (_terminalState == BlackWin && color == White)
+        return true;
+    if (_terminalState == WhiteWin && color == Black)
+        return true;
+
     BitBoard kingBoard(_pieces[King] & _colors[color]);
 
     if (0LL == kingBoard)
+    {
+        _terminalState = (White == color) ? BlackWin : WhiteWin;
         return true;
+    }
 
     if (inCheck(color))
     {
         auto moves = getMoves(color, false);
         if (moves.size() == 0)
-            return true;
+        {
+            _terminalState = (White == color) ? BlackWin : WhiteWin;
+            return true;            
+        }
     }
     return false;
 }
 
-
-std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate) const
+std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate)
 {
     std::vector<Move> result;
-    result.reserve(100);
-    if (checkCheckmate && inCheckmate(color))
+    if (_terminalState != Running)
     {
         return result;
     }
 
+    if (checkCheckmate && inCheckmate(color))
+    {
+        _terminalState = (White == color) ? BlackWin : WhiteWin;        
+        return result;
+    }
+
+    result.reserve(100);
     std::vector<Move> castles(getCastlingMoves(color));
     std::vector<Move> kings(getKingMoves(color));
     std::vector<Move> queens(getQueenMoves(color));
@@ -718,6 +746,9 @@ std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate) 
                 return bad;
             }),
         result.end());
+
+    if (result.size() == 0)
+        _terminalState = Draw;
 
     return result;
 }
@@ -939,7 +970,7 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs)
                         
     for (int i = 63 ; i > -1 ; --i)
     {
-        lhs << charAt(i);
+        lhs << charAt(i) << " ";
         
         if ((i) % 8 == 0)
         {

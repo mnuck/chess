@@ -50,13 +50,20 @@ int main(int argc, char* argv[])
 //    Board b(Board::initial());
     
 
-    /*
+    
     std::string kiwipete = 
         "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
     std::stringstream kp(kiwipete);
 
     Board b(Board::parseEPD(kp));
-    */
+    
+    std::cout << b << std::endl;
+    b = b.applyExternalMove(Move(15, 31));    
+    std::cout << b << std::endl;
+    b = b.applyMove(Move(30, 23, Pawn, Pawn, Pawn, false, false, false, true, -1, false, false));
+    std::cout << b << std::endl;
+    
+
 
 //    b = b.applyMove(Move(7, 6));
 //    b = b.applyMove(Move(59, 61));
@@ -75,7 +82,7 @@ int main(int argc, char* argv[])
         std::cout << m << ": " << (unsigned long long)brd.perft(0) << std::endl;
     }
 */
-
+/*
     std::string wat =
         "r2qk1nr/1ppbpp1p/8/8/pBp5/5p2/4P2b/5B1K w kq -";
     std::stringstream watss(wat);
@@ -88,7 +95,7 @@ int main(int argc, char* argv[])
         Board brd(b.applyExternalMove(m));
         std::cout << m << ": " << (unsigned long long)brd.perft(0) << std::endl;
     }
-
+*/
 
 /*
     for (int depth = 0; depth < 1; ++depth)

@@ -1,6 +1,8 @@
 #ifndef __ENUMS_H__
 #define __ENUMS_H__
 
+#include <cstdint>
+
 namespace BixNix
 {
 
@@ -33,6 +35,15 @@ enum MinimaxPlayer
 {
     Min,
     Max
+};
+
+
+enum TerminalState
+{
+    Running,
+    Draw,
+    WhiteWin,
+    BlackWin
 };
 
 

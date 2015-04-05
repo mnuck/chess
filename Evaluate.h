@@ -11,7 +11,7 @@ class Evaluate
 public:
     static Evaluate& GetInstance();
     virtual ~Evaluate() {}
-    int getEvaluation(const Board& board, const Color color);
+    int getEvaluation(Board& board, const Color color);
 
 protected:
     Evaluate();
