@@ -21,7 +21,7 @@ if(NOT Boost_FOUND)
 endif(NOT Boost_FOUND)
 
 # Find source files
-file(GLOB FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/games/*/*" "${CMAKE_CURRENT_SOURCE_DIR}/joueur/*")
+file(GLOB FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/games/*/*" "${CMAKE_CURRENT_SOURCE_DIR}/joueur/*" "${CMAKE_CURRENT_SOURCE_DIR}/games/chess/BixNix/*")
 
 set(FILES ${FILES}
           gamesRegistry.h
