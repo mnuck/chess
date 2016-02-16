@@ -6,6 +6,7 @@
 #include "chess.h"
 #include "game.h"
 #include "gameObject.h"
+#include "move.h"
 #include "piece.h"
 #include "player.h"
 
