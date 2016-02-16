@@ -51,14 +51,13 @@ BixNix::Move Chess::AI::siggame2bixnix(const std::string& move)
     return BixNix::Move(0, 0, BixNix::Queen);
 }
 
-
 void Chess::AI::sendBixNixMove(const BixNix::Move& m)
 {
-    int sourceFile = 8 - (m.getSource() % 8);
-    int targetFile = 8 - (m.getTarget() % 8);
+    const int sourceFile = 1 + (m.getSource() / 8);
+    const int targetFile = 1 + (m.getTarget() / 8);
 
-    std::string sourceRank(1, 'a' + (m.getSource() / 8));
-    std::string targetRank(1, 'a' + (m.getTarget() / 8));
+    const std::string sourceRank(1, 'a' + (7 - (m.getSource() % 8)));
+    const std::string targetRank(1, 'a' + (7 - (m.getTarget() % 8)));
 
     for (auto* p : game->pieces)
     {
