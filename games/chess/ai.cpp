@@ -35,7 +35,7 @@ bool Chess::AI::runTurn()
 {
     if (game->moves.size() > 0)
         _engine.reportMove(
-            siggame2bixnix(game->moves[game->currentTurn]),
+            siggame2bixnix(game->moves[game->currentTurn - 1]),
             player->timeRemaining / 1000000000);
     sendBixNixMove(_engine.getMove());
     return true;
@@ -43,9 +43,9 @@ bool Chess::AI::runTurn()
 
 BixNix::Move Chess::AI::siggame2bixnix(Chess::Move* m)
 {
+    const int sourceIndex = 8 * m->fromFile - (1 + (m->fromRank)[0] - 'a');
+    const int targetIndex = 8 * m->toFile - (1 + (m->toRank)[0]   - 'a');
 
-    const int sourceIndex = 8 * (1 + m->fromRank[0] - 'a') - m->fromFile;
-    const int targetIndex = 8 * (1 + m->toRank[0]   - 'a') - m->toFile;
     BixNix::Piece promoteType;
     if (m->promotion == "Knight")
     {
