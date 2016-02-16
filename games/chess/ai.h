@@ -69,7 +69,7 @@ protected:
         /// <summary>
         /// Converts a SIG-Game formatted move to BixNix format
         /// </summary>
-        BixNix::Move siggame2bixnix(const std::string& move);
+        BixNix::Move siggame2bixnix(Chess::Move* move);
 
         /// <summary>
         /// Converts a BixNix move to SIG-Game format and sends it

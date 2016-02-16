@@ -41,14 +41,30 @@ bool Chess::AI::runTurn()
     return true;
 }
 
-
-BixNix::Move Chess::AI::siggame2bixnix(const std::string& move)
+BixNix::Move Chess::AI::siggame2bixnix(Chess::Move* m)
 {
-    // ignore the move string, analyze the piece list
-    SELF EMBARGO VIA FAILURE TO COMPILE
-    
-    // return a dummy for now
-    return BixNix::Move(0, 0, BixNix::Queen);
+
+    const int sourceIndex = 8 * (1 + m->fromRank[0] - 'a') - m->fromFile;
+    const int targetIndex = 8 * (1 + m->toRank[0]   - 'a') - m->toFile;
+    BixNix::Piece promoteType;
+    if (m->promotion == "Knight")
+    {
+        promoteType = BixNix::Knight;
+    }
+    else if (m->promotion == "Rook")
+    {
+        promoteType = BixNix::Rook;
+    }
+    else if (m->promotion == "Bishop")
+    {
+        promoteType = BixNix::Bishop;
+    } 
+    else
+    {
+        promoteType = BixNix::Queen;
+    }
+
+    return BixNix::Move(sourceIndex, targetIndex, promoteType);
 }
 
 void Chess::AI::sendBixNixMove(const BixNix::Move& m)
