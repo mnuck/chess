@@ -6,6 +6,9 @@
 #include <cmath>
 #include <functional>
 #include <vector>
+#include <sstream>
+
+#include "Logger.h"
 
 #include "Engine.h"
 #include "Evaluate.h"
@@ -17,34 +20,33 @@ void Engine::end()
 {
     stopSearch();
     
-    std::cout << _time << " time left" << std::endl;
+    LOG(trace) << _time << " time left";
 
     auto end_time = std::chrono::system_clock::now();
     auto diff = 
         std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
-    std::cout << _node_expansions << " node expansions\n"
-              << diff.count() << " seconds\n"
-              << _cutoffs << " cutoffs\n"
+    LOG(trace) << _node_expansions << " node expansions";
+    LOG(trace) << diff.count() << " seconds";
+    LOG(trace) << _cutoffs << " cutoffs";
 
-              << _node_expansions / static_cast<double>(diff.count()) 
-              << " expansions per second\n"
+    LOG(trace) << _node_expansions / static_cast<double>(diff.count())
+               << " expansions per second";
+    LOG(trace) << _cutoffs / static_cast<double>(_node_expansions) 
+              << " cutoff ratio";
 
-              << _cutoffs / static_cast<double>(_node_expansions) 
-              << " cutoff ratio" << std::endl;
-
-    std::cout << _ttable._collisions << " cache collisions\n"
-              << _ttable._hits << " cache hits\n"
-              << _ttable._misses << " cache misses\n"
-              << _ttable._hits / static_cast<double>(_ttable._hits + _ttable._misses) 
-              << " cache hit ratio" << std::endl;
+    LOG(trace) << _ttable._collisions << " cache collisions";
+    LOG(trace) << _ttable._hits << " cache hits";
+    LOG(trace) << _ttable._misses << " cache misses";
+    LOG(trace) << _ttable._hits / static_cast<double>(_ttable._hits + _ttable._misses) 
+               << " cache hit ratio";
 
     size_t occupied(_ttable.getOccupancy());
     size_t ttableSize(_ttable.getSize());
     
-    std::cout << (long)occupied << " cache slots occupied\n"
-              << (long)ttableSize << " cache slots total\n"
-              << occupied / static_cast<double>(ttableSize) << " occupancy" << std::endl;
+    LOG(trace) << (long)occupied << " cache slots occupied";
+    LOG(trace) << (long)ttableSize << " cache slots total";
+    LOG(trace) << occupied / static_cast<double>(ttableSize) << " occupancy" << std::endl;
 }
 
 
@@ -97,8 +99,7 @@ Move Engine::getMove()
     Move move = _best_move;
     _board.applyMove(move);
 
-    std::cout << "sending (" << move.score << ") " << move << " " << std::endl;
-    std::cout << _board << std::endl;
+    LOG(trace) << "sending (" << move.score << ") " << move;
 
     startSearch(); // start pondering
    
@@ -146,16 +147,18 @@ void Engine::search()
                   << actions[0] << std::endl;
 */
         _pv[0] = actions[0];
-        std::cout << depth << " (" << actions[0].score << ") PV: ";
+        std::stringstream ss;
+        
+        ss << depth << " (" << actions[0].score << ") PV: ";
         for (Move& m : _pv)
         {
             if (Move(0) == m)
                 break;
             else
-                std::cout << m << " ";
+                ss << m << " ";
             m = Move(0);
         }
-        std::cout << std::endl;
+        LOG(trace) << ss.str();        
 
         ++depth;
     }
@@ -455,11 +458,9 @@ void Engine::init(Color color, float time)
 
 void Engine::reportMove(Move move, float time)
 {
-    std::cout << "receiving " << move << " " << std::endl;
+    LOG(trace) << "receiving " << move;
     _time = time;
     _board.applyExternalMove(move);
-    //_board = _board.applyExternalMove(move);
-    std::cout << _board << std::endl;
 }
 
 
