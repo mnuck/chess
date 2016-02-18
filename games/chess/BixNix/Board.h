@@ -92,5 +92,3 @@ std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
 
 #endif // __BOARD_H__
 
-
-// position fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - moves a1b1 e8c8 e5d7

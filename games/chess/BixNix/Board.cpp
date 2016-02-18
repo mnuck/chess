@@ -249,7 +249,6 @@ void Board::applyMove(const Move move)
         _colors[movingColor] &= ~rookSourceBB;
         _colors[movingColor] |=  rookTargetBB;
         _dirty |= rookSourceBB;
-        // _dirty |= rookTargetBB; // irrelevant
         _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookSource);
         _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookTarget);
     }
@@ -373,7 +372,6 @@ void Board::unapplyMove(const Move move)
         _colors[_toMove] |= rookSourceBB;
         _colors[_toMove] &= ~rookTargetBB;
         _dirty &= ~rookSourceBB;
-        // _dirty &= ~rookTargetBB; // irrelevant
         _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookSource);
         _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookTarget);
     }
@@ -487,28 +485,28 @@ std::vector<Move> Board::getMoves(
                                              false, false, -1,
                                              false, false,
                                              dirtyingSource,
-                                            dirtyingTarget));
+                                             dirtyingTarget));
                     result.emplace_back(Move(source, target, 
                                              Pawn, capturedPiece, Rook, 
                                              true, capturing,
                                              false, false, -1,
                                              false, false,
                                              dirtyingSource,
-                                            dirtyingTarget));
+                                             dirtyingTarget));
                     result.emplace_back(Move(source, target, 
                                              Pawn, capturedPiece, Bishop, 
                                              true, capturing,
                                              false, false, -1,
                                              false, false,
                                              dirtyingSource,
-                                            dirtyingTarget));
+                                             dirtyingTarget));
                     result.emplace_back(Move(source, target, 
                                              Pawn, capturedPiece, Knight, 
                                              true, capturing,
                                              false, false, -1,
                                              false, false,
                                              dirtyingSource,
-                                            dirtyingTarget));
+                                             dirtyingTarget));
                 } 
                 else 
                 {

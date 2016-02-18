@@ -23,12 +23,15 @@ void Engine::end()
     auto diff = 
         std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
-    std::cout << diff.count() << " seconds "
-              << _node_expansions / static_cast<double>(diff.count()) << " per second" << std::endl;
-
     std::cout << _node_expansions << " node expansions\n"
+              << diff.count() << " seconds\n"
               << _cutoffs << " cutoffs\n"
-              << _cutoffs / static_cast<double>(_node_expansions) << " cutoff ratio" << std::endl;
+
+              << _node_expansions / static_cast<double>(diff.count()) 
+              << " expansions per second\n"
+
+              << _cutoffs / static_cast<double>(_node_expansions) 
+              << " cutoff ratio" << std::endl;
 
     std::cout << _ttable._collisions << " cache collisions\n"
               << _ttable._hits << " cache hits\n"
@@ -86,7 +89,6 @@ Move Engine::getMove()
 
     stopSearch();
     Move move = _best_move;
-    //_board = _board.applyMove(move);
     _board.applyMove(move);
 
     std::cout << "sending (" << move.score << ") " << move << " " << std::endl;
@@ -116,12 +118,10 @@ void Engine::search()
 
         for (Move& m : actions)
         {
-            //Board brd(searchBoard);
             searchBoard.applyMove(m);
-            //Board brd(searchBoard.applyMove(m));
             m.score = - negamax(searchBoard, depth);
+            //m.score = - PVS(searchBoard, depth);
             searchBoard.unapplyMove(m);
-            //m.score = - PVS(brd, depth);
             if (_search_stop)
                 return;
         }
@@ -173,7 +173,7 @@ int Engine::negamax(Board& board,
     if (0 == depth)
     {
         result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
-//        result = quiescent(board, alpha, beta);
+        // result = quiescent(board, alpha, beta);
     } 
     else 
     {
@@ -202,10 +202,7 @@ int Engine::negamax(Board& board,
                     ++_cutoffs;
                     break;
                 }
-                //Board brd(board);
                 board.applyMove(m);
-                
-                // Board brd(board.applyMove(m));
                 m.score = - negamax(board, depth - 1, -beta, -alpha, pvHeight + 1);
                 board.unapplyMove(m);
                 if (_search_stop)
@@ -244,7 +241,7 @@ int Engine::PVS(Board& board,
     if (0 == depth)
     {
         result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
-        //result = quiescent(board, alpha, beta);
+        // result = quiescent(board, alpha, beta);
         _ttable.set(board.getHash(), result, depth, alpha, beta);
         return result; 
     } 
@@ -470,7 +467,7 @@ void Engine::trimTrifoldRepetition(const Board& board, std::vector<Move>& action
             actions.end(),
             [&] (Move& move) -> bool
             {
-                if ((move            == board._moves[len - 4]) &&
+                if ((move                  == board._moves[len - 4]) &&
                     (board._moves[len - 7] == board._moves[len - 3]) &&
                     (board._moves[len - 6] == board._moves[len - 2]) &&
                     (board._moves[len - 5] == board._moves[len - 1]))
@@ -481,6 +478,5 @@ void Engine::trimTrifoldRepetition(const Board& board, std::vector<Move>& action
             }),
         actions.end());
 }
-
 
 }
