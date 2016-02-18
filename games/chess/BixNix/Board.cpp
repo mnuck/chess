@@ -128,7 +128,7 @@ void Board::applyExternalMove(const Move extMove)
         }
     }
 
-    return applyMove(
+    applyMove(
         Move(sourceSq, targetSq,
              movingPiece, capturedPiece, promotionPiece,
              promoting, capturing, doublePushing, enPassanting,

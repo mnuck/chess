@@ -113,7 +113,7 @@ void Engine::search()
     unsigned int depth = 0;
     while (!_search_stop)
     {
-        if (depth > 50)
+        if (depth > HEIGHTMAX)
             return;
 
         for (Move& m : actions)
