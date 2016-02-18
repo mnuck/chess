@@ -61,6 +61,11 @@ Move Engine::getMove()
     std::vector<long> splits;
 
     std::unique_lock<std::mutex> lock(_cvMutex);
+
+    // Three ways out of this loop:
+    // 1. endTime hard timer expires
+    // 2. found a checkmate
+    // 3. estimated time to finish the next depth exceeds endTime
     while (std::cv_status::no_timeout == 
             _best_move_ready.wait_until(lock, endTime))
     {
@@ -75,6 +80,7 @@ Move Engine::getMove()
         
         if (splits.size() > 3)
         {
+            // assume exponential growth, extend the line
             double ultimate = log(splits[splits.size() - 1]);
             double penultimate = log(splits[splits.size() - 2]);
             double estimate = exp(2 * ultimate - penultimate);
@@ -180,6 +186,7 @@ int Engine::negamax(Board& board,
         std::vector<Move> actions(board.getMoves(board._toMove));
         trimTrifoldRepetition(board, actions);
 
+        // PV move reordering, not a full sort
         for (Move& m: actions)
         {
             if (m == _pv[pvHeight])
@@ -410,7 +417,6 @@ void Engine::startSearch()
 {
     if (_searcher == nullptr)
     {
-        srand(time(NULL));
         for (Move& m: _pv)
             m = Move(0);
         _search_stop = false;

@@ -58,7 +58,7 @@ private:
     float _time;
 
     static const int HEIGHTMAX = 50;
-    std::array<Move, HEIGHTMAX> _pv;
+    std::array<Move, HEIGHTMAX> _pv; // Principal Variation
 
     std::thread* _searcher;
     bool _search_stop;
