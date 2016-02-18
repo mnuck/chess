@@ -14,7 +14,7 @@ endif(COMMAND cmake_policy)
 project(client)
 
 # Find Boost
-find_package(Boost COMPONENTS regex date_time system program_options REQUIRED)
+find_package(Boost COMPONENTS regex date_time system program_options log log_setup thread REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 if(NOT Boost_FOUND)
     message(FATAL_ERROR "Boost was not found!")
