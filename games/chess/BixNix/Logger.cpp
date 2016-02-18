@@ -27,25 +27,26 @@ BOOST_LOG_GLOBAL_LOGGER_INIT(logger, logger_t)
     logger.add_attribute("ProcessID", attributes::current_process_id());
     logger.add_attribute("ThreadID", attributes::current_thread_id());
 
-    if (nullptr == getenv("LOG_TO_FILE"))
-    {
-        core::get()->add_sink
+
+    core::get()->add_sink
+    (
+        add_console_log
         (
-            add_console_log
+            std::cout,
+            keywords::auto_flush = true,
+            keywords::filter = severity >= trivial::trace,
+            keywords::format =
             (
-                std::cout,
-                keywords::auto_flush = true,
-                keywords::filter = severity >= trivial::trace,
-                keywords::format =
-                (
-                    expressions::stream
-                        << "[" << expressions::format_date_time<boost::posix_time::ptime>
-                        ("TimeStamp", "%H:%M:%S.%f") << "] "
-                        << expressions::smessage
-                )
+                expressions::stream
+                    << "[" << expressions::format_date_time<boost::posix_time::ptime>
+                    ("TimeStamp", "%H:%M:%S.%f") << "] "
+                    << expressions::smessage
             )
-        );        
-    } else {
+        )
+    );        
+
+    if (getenv("LOG_TO_FILE"))
+    {
         core::get()->add_sink
         (
             add_file_log
