@@ -13,6 +13,7 @@
 #include "Enums.h"
 #include "Board.h"
 #include "TranspositionTable.h"
+#include "ThreefoldTable.h"
 
 namespace BixNix
 {
@@ -51,7 +52,7 @@ private:
     void stopSearch();
     void search();
 
-    void trimTrifoldRepetition(const Board& board, std::vector<Move>& moves) const;
+    void trimTrifoldRepetition(Board& board, std::vector<Move>& moves) const;
 
     Board _board;
     Color _color;
@@ -72,6 +73,7 @@ private:
     
     static const int TTSIZE = 16777216;
     TranspositionTable _ttable;
+    ThreefoldTable _3table;
 };
 
 }
