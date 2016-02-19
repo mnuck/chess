@@ -98,6 +98,7 @@ Move Engine::getMove()
     stopSearch();
     Move move = _best_move;
     _board.applyMove(move);
+    _3table.add(_board.getHash());
 
     LOG(trace) << "sending (" << move.score << ") " << move;
 
@@ -126,8 +127,10 @@ void Engine::search()
         for (Move& m : actions)
         {
             searchBoard.applyMove(m);
+            _3table.add(searchBoard.getHash());
             m.score = - negamax(searchBoard, depth);
             //m.score = - PVS(searchBoard, depth);
+            _3table.remove(searchBoard.getHash());
             searchBoard.unapplyMove(m);
             if (_search_stop)
                 return;
@@ -213,7 +216,9 @@ int Engine::negamax(Board& board,
                     break;
                 }
                 board.applyMove(m);
+                _3table.add(board.getHash());
                 m.score = - negamax(board, depth - 1, -beta, -alpha, pvHeight + 1);
+                _3table.remove(board.getHash());
                 board.unapplyMove(m);
                 if (_search_stop)
                     return 0;
@@ -461,27 +466,24 @@ void Engine::reportMove(Move move, float time)
     LOG(trace) << "receiving " << move;
     _time = time;
     _board.applyExternalMove(move);
+    _3table.add(_board.getHash());
 }
 
 
-void Engine::trimTrifoldRepetition(const Board& board, std::vector<Move>& actions) const
+void Engine::trimTrifoldRepetition(Board& board, std::vector<Move>& actions) const
 {
     // trim trifold repetition moves for now
-    size_t len = board._moves.size();
     actions.erase(
         std::remove_if(
             actions.begin(),
             actions.end(),
             [&] (Move& move) -> bool
             {
-                if ((move                  == board._moves[len - 4]) &&
-                    (board._moves[len - 7] == board._moves[len - 3]) &&
-                    (board._moves[len - 6] == board._moves[len - 2]) &&
-                    (board._moves[len - 5] == board._moves[len - 1]))
-                {
-                    return true;
-                }
-                return false;
+                bool result = false;
+                board.applyMove(move);
+                if (_3table.addWouldTrigger(board.getHash()))
+                    result = true;
+                board.unapplyMove(move);
             }),
         actions.end());
 }
