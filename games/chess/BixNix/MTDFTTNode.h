@@ -8,7 +8,7 @@
 
 namespace BixNix
 {
-    
+
 class MTDFTTNode
 {
 public:
@@ -23,11 +23,10 @@ public:
     int _lower;
     int _upper;
     unsigned int _depth;
-    Move _move;    
+    Move _move;
 };
 
 
 }
-
 
 #endif // _TRANSPOSITION_NODE_H_

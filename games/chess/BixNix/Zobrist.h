@@ -30,7 +30,7 @@ protected:
     ZobristNumber _BQCastle;
     ZobristNumber _BKCastle;
 };
-    
+
 }
 
 #endif // _ZOBRIST_H_

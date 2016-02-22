@@ -14,7 +14,7 @@ bool SetLogLevel(const unsigned int level);
 
 class ScopeLog
 {
-public: 
+public:
     ScopeLog(std::string message);
     ~ScopeLog();
 

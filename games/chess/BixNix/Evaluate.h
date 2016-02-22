@@ -17,9 +17,8 @@ protected:
     Evaluate();
 
     int materialEval(const Board& board);
-    
     int pieceSquareEval(const Board& board);
-    
+
     std::array<std::array<std::array<int, 64>, 6>, 2> _pieceSquare;
     std::array<int, 6> _material;
 };

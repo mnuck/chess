@@ -45,7 +45,7 @@ public:
     bool getDoublePushing() const;
     bool getEnPassanting() const;
     int  getEnPassantTargetFile() const;
-    
+
     bool getCastling() const;
     bool getCastlingDirection() const;
 

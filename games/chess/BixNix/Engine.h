@@ -27,11 +27,10 @@ public:
     void init(Color color, float time);
     void end();
 
-    void reportMove(Move move, float time);    
+    void reportMove(Move move, float time);
     Move getMove();
 
 private:
-
     int PVS(Board& board,
             const unsigned int depth,
             int alpha=-CHECKMATE,
@@ -70,14 +69,13 @@ private:
     unsigned long long _node_expansions;
     unsigned long long _cutoffs;
     std::chrono::time_point<std::chrono::system_clock> _start_time;
-    
+
     static const int TTSIZE = 16777216;
     TranspositionTable _ttable;
     ThreefoldTable _3table;
 };
 
 }
-
 
 
 #endif // __ENGINE_H__

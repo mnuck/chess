@@ -48,69 +48,69 @@ Bishops::~Bishops()
 
 Bishops::Bishops():
     _moveMask({
-                0x40201008040200LL, 
-                0x402010080400LL, 
-                0x4020100a00LL, 
-                0x40221400LL, 
-                0x2442800LL, 
-                0x204085000LL, 
-                0x20408102000LL, 
-                0x2040810204000LL, 
-                0x20100804020000LL, 
-                0x40201008040000LL, 
-                0x4020100a0000LL, 
-                0x4022140000LL, 
-                0x244280000LL, 
-                0x20408500000LL, 
-                0x2040810200000LL, 
-                0x4081020400000LL, 
-                0x10080402000200LL, 
-                0x20100804000400LL, 
-                0x4020100a000a00LL, 
-                0x402214001400LL, 
-                0x24428002800LL, 
-                0x2040850005000LL, 
-                0x4081020002000LL, 
-                0x8102040004000LL, 
-                0x8040200020400LL, 
-                0x10080400040800LL, 
-                0x20100a000a1000LL, 
-                0x40221400142200LL, 
-                0x2442800284400LL, 
-                0x4085000500800LL, 
-                0x8102000201000LL, 
-                0x10204000402000LL, 
-                0x4020002040800LL, 
-                0x8040004081000LL, 
-                0x100a000a102000LL, 
-                0x22140014224000LL, 
-                0x44280028440200LL, 
-                0x8500050080400LL, 
-                0x10200020100800LL, 
-                0x20400040201000LL, 
-                0x2000204081000LL, 
-                0x4000408102000LL, 
-                0xa000a10204000LL, 
-                0x14001422400000LL, 
-                0x28002844020000LL, 
-                0x50005008040200LL, 
-                0x20002010080400LL, 
-                0x40004020100800LL, 
-                0x20408102000LL, 
-                0x40810204000LL, 
-                0xa1020400000LL, 
-                0x142240000000LL, 
-                0x284402000000LL, 
-                0x500804020000LL, 
-                0x201008040200LL, 
-                0x402010080400LL, 
-                0x2040810204000LL, 
-                0x4081020400000LL, 
-                0xa102040000000LL, 
-                0x14224000000000LL, 
-                0x28440200000000LL, 
-                0x50080402000000LL, 
-                0x20100804020000LL, 
+                0x40201008040200LL,
+                0x402010080400LL,
+                0x4020100a00LL,
+                0x40221400LL,
+                0x2442800LL,
+                0x204085000LL,
+                0x20408102000LL,
+                0x2040810204000LL,
+                0x20100804020000LL,
+                0x40201008040000LL,
+                0x4020100a0000LL,
+                0x4022140000LL,
+                0x244280000LL,
+                0x20408500000LL,
+                0x2040810200000LL,
+                0x4081020400000LL,
+                0x10080402000200LL,
+                0x20100804000400LL,
+                0x4020100a000a00LL,
+                0x402214001400LL,
+                0x24428002800LL,
+                0x2040850005000LL,
+                0x4081020002000LL,
+                0x8102040004000LL,
+                0x8040200020400LL,
+                0x10080400040800LL,
+                0x20100a000a1000LL,
+                0x40221400142200LL,
+                0x2442800284400LL,
+                0x4085000500800LL,
+                0x8102000201000LL,
+                0x10204000402000LL,
+                0x4020002040800LL,
+                0x8040004081000LL,
+                0x100a000a102000LL,
+                0x22140014224000LL,
+                0x44280028440200LL,
+                0x8500050080400LL,
+                0x10200020100800LL,
+                0x20400040201000LL,
+                0x2000204081000LL,
+                0x4000408102000LL,
+                0xa000a10204000LL,
+                0x14001422400000LL,
+                0x28002844020000LL,
+                0x50005008040200LL,
+                0x20002010080400LL,
+                0x40004020100800LL,
+                0x20408102000LL,
+                0x40810204000LL,
+                0xa1020400000LL,
+                0x142240000000LL,
+                0x284402000000LL,
+                0x500804020000LL,
+                0x201008040200LL,
+                0x402010080400LL,
+                0x2040810204000LL,
+                0x4081020400000LL,
+                0xa102040000000LL,
+                0x14224000000000LL,
+                0x28440200000000LL,
+                0x50080402000000LL,
+                0x20100804020000LL,
                 0x40201008040200LL
         }),
     _magicShift({
@@ -190,7 +190,7 @@ Bishops::Bishops():
     _data(nullptr)
 {
     _data = new BitBoard[5248];
-    
+
     size_t squareIndex = 0;
 
     for (Square square = 0 ; square < 64 ; ++square)
@@ -201,14 +201,14 @@ Bishops::Bishops():
         for (BitBoard occupied : genOccupancyVariations(square))
         {
             BitBoard bishops(1LL << square);
-            
+
             BitBoard neAttacks = shiftNE(smearNE(bishops, ~occupied));
             BitBoard seAttacks = shiftSE(smearSE(bishops, ~occupied));
             BitBoard swAttacks = shiftSW(smearSW(bishops, ~occupied));
             BitBoard nwAttacks = shiftNW(smearNW(bishops, ~occupied));
             BitBoard attacks = 
                 neAttacks | seAttacks | swAttacks | nwAttacks;
-            
+
             BitBoard blockers(occupied & _moveMask[square]);
             unsigned int index((blockers * _magicNumber[square]) >> _magicShift[square]);
             *(_magicAttacks[square] + index) = attacks;
@@ -224,7 +224,7 @@ std::vector<BitBoard> Bishops::genOccupancyVariations(Square square)
     std::vector<size_t> indexOfOnesInMask;
     for (size_t j = 0; j < 64; ++j)
         if (_moveMask[square] & (1LL << j))
-            indexOfOnesInMask.push_back(j);            
+            indexOfOnesInMask.push_back(j);
 
     for (BitBoard i = 0; i < variationCount; ++i)
     {
@@ -242,6 +242,3 @@ std::vector<BitBoard> Bishops::genOccupancyVariations(Square square)
 
 
 }
-
-
-     
