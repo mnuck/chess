@@ -35,7 +35,7 @@ Knights::Knights()
 BitBoard Knights::generateAttacksFrom(Square index)
 {
     BitBoard x = 1LL << index;
-    
+
     return (x & notAFile) << 17  |
            (x & notAFile) >> 15  |
            (x & notABFile) >> 6  |

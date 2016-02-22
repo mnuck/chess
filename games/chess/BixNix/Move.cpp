@@ -130,7 +130,7 @@ bool Move::getSourceDirtied() const
 
 bool Move::getTargetDirtied() const
 {
-    return (_data & DIRTY_TARGET_MASK);    
+    return (_data & DIRTY_TARGET_MASK);
 }
 
 
@@ -143,7 +143,7 @@ std::ostream& operator<<(std::ostream& lhs, const Move& rhs)
     const int targetFile = 8 - (rhs.getTarget() % 8);
     const int targetRank = 1 + (rhs.getTarget() / 8);
 
-    lhs << files[sourceFile] << sourceRank 
+    lhs << files[sourceFile] << sourceRank
         << files[targetFile] << targetRank;
 
     if (rhs.getPromoting())
@@ -172,7 +172,7 @@ std::ostream& operator<<(std::ostream& lhs, const Move& rhs)
             lhs << " promote to a...wait, what?";
             break;
         }
-    }    
+    }
 
     return lhs;
 }
@@ -183,4 +183,3 @@ bool Move::operator==(const Move& rhs) const
 }
 
 }
-

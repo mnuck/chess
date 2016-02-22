@@ -17,7 +17,7 @@ Zobrist::Zobrist()
 {
     std::mt19937_64 getRand;
     getRand.seed(1234567890LL);
-    
+
     _blackToMove = getRand();
     _WQCastle = getRand();
     _WKCastle = getRand();
@@ -26,7 +26,7 @@ Zobrist::Zobrist()
 
     for (ZobristNumber& z: _pieces)
         z = getRand();
-        
+
     for (ZobristNumber& z: _epFile)
         z = getRand();
 }

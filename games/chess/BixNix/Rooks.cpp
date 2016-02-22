@@ -23,7 +23,7 @@ BitBoard Rooks::getAttacksFrom(BitBoard rooks,
         rooks &= ~(1LL << source);
         result |= getAttacksFrom(source, targets, friendlies);
     }
-    return result;    
+    return result;
 }
 
 
@@ -36,7 +36,6 @@ BitBoard Rooks::getAttacksFrom(Square square,
     BitBoard attacks(*(_magicAttacks[square] + index));
     return attacks & ~friendlies;
 }
-    
 
 
 Rooks::~Rooks()
@@ -48,71 +47,72 @@ Rooks::~Rooks()
     }
 }
 
+
 Rooks::Rooks():
     _moveMask({
                 0x000101010101017eLL,
                 0x000202020202027cLL,
-                0x000404040404047aLL, 
-                0x0008080808080876LL, 
-                0x001010101010106eLL, 
-                0x002020202020205eLL, 
-                0x004040404040403eLL, 
-                0x008080808080807eLL, 
-                0x0001010101017e00LL, 
-                0x0002020202027c00LL, 
-                0x0004040404047a00LL, 
-                0x0008080808087600LL, 
-                0x0010101010106e00LL, 
-                0x0020202020205e00LL, 
-                0x0040404040403e00LL, 
-                0x0080808080807e00LL, 
-                0x00010101017e0100LL, 
-                0x00020202027c0200LL, 
-                0x00040404047a0400LL, 
-                0x0008080808760800LL, 
-                0x00101010106e1000LL, 
-                0x00202020205e2000LL, 
-                0x00404040403e4000LL, 
-                0x00808080807e8000LL, 
-                0x000101017e010100LL, 
-                0x000202027c020200LL, 
-                0x000404047a040400LL, 
-                0x0008080876080800LL, 
-                0x001010106e101000LL, 
-                0x002020205e202000LL, 
-                0x004040403e404000LL, 
-                0x008080807e808000LL, 
-                0x0001017e01010100LL, 
-                0x0002027c02020200LL, 
-                0x0004047a04040400LL, 
-                0x0008087608080800LL, 
-                0x0010106e10101000LL, 
-                0x0020205e20202000LL, 
-                0x0040403e40404000LL, 
-                0x0080807e80808000LL, 
-                0x00017e0101010100LL, 
-                0x00027c0202020200LL, 
-                0x00047a0404040400LL, 
-                0x0008760808080800LL, 
-                0x00106e1010101000LL, 
-                0x00205e2020202000LL, 
-                0x00403e4040404000LL, 
-                0x00807e8080808000LL, 
-                0x007e010101010100LL, 
-                0x007c020202020200LL, 
-                0x007a040404040400LL, 
-                0x0076080808080800LL, 
-                0x006e101010101000LL, 
-                0x005e202020202000LL, 
-                0x003e404040404000LL, 
-                0x007e808080808000LL, 
-                0x7e01010101010100LL, 
-                0x7c02020202020200LL, 
-                0x7a04040404040400LL, 
-                0x7608080808080800LL, 
-                0x6e10101010101000LL, 
-                0x5e20202020202000LL, 
-                0x3e40404040404000LL, 
+                0x000404040404047aLL,
+                0x0008080808080876LL,
+                0x001010101010106eLL,
+                0x002020202020205eLL,
+                0x004040404040403eLL,
+                0x008080808080807eLL,
+                0x0001010101017e00LL,
+                0x0002020202027c00LL,
+                0x0004040404047a00LL,
+                0x0008080808087600LL,
+                0x0010101010106e00LL,
+                0x0020202020205e00LL,
+                0x0040404040403e00LL,
+                0x0080808080807e00LL,
+                0x00010101017e0100LL,
+                0x00020202027c0200LL,
+                0x00040404047a0400LL,
+                0x0008080808760800LL,
+                0x00101010106e1000LL,
+                0x00202020205e2000LL,
+                0x00404040403e4000LL,
+                0x00808080807e8000LL,
+                0x000101017e010100LL,
+                0x000202027c020200LL,
+                0x000404047a040400LL,
+                0x0008080876080800LL,
+                0x001010106e101000LL,
+                0x002020205e202000LL,
+                0x004040403e404000LL,
+                0x008080807e808000LL,
+                0x0001017e01010100LL,
+                0x0002027c02020200LL,
+                0x0004047a04040400LL,
+                0x0008087608080800LL,
+                0x0010106e10101000LL,
+                0x0020205e20202000LL,
+                0x0040403e40404000LL,
+                0x0080807e80808000LL,
+                0x00017e0101010100LL,
+                0x00027c0202020200LL,
+                0x00047a0404040400LL,
+                0x0008760808080800LL,
+                0x00106e1010101000LL,
+                0x00205e2020202000LL,
+                0x00403e4040404000LL,
+                0x00807e8080808000LL,
+                0x007e010101010100LL,
+                0x007c020202020200LL,
+                0x007a040404040400LL,
+                0x0076080808080800LL,
+                0x006e101010101000LL,
+                0x005e202020202000LL,
+                0x003e404040404000LL,
+                0x007e808080808000LL,
+                0x7e01010101010100LL,
+                0x7c02020202020200LL,
+                0x7a04040404040400LL,
+                0x7608080808080800LL,
+                0x6e10101010101000LL,
+                0x5e20202020202000LL,
+                0x3e40404040404000LL,
                 0x7e80808080808000LL}),
     _magicShift({
                 52,53,53,53,53,53,53,52,
@@ -191,7 +191,7 @@ Rooks::Rooks():
     _data(nullptr)
 {
     _data = new BitBoard[102400];
-    
+
     size_t squareIndex = 0;
 
     for (Square square = 0 ; square < 64 ; ++square)
@@ -207,10 +207,10 @@ Rooks::Rooks():
             BitBoard eastAttacks = shiftE(smearE(rooks, ~occupied));
             BitBoard westAttacks = shiftW(smearW(rooks, ~occupied));
 
-            BitBoard attacks = 
-                northAttacks | southAttacks | 
+            BitBoard attacks =
+                northAttacks | southAttacks |
                 eastAttacks | westAttacks;
-            
+
             BitBoard blockers(occupied & _moveMask[square]);
             unsigned int index((blockers * _magicNumber[square]) >> _magicShift[square]);
             *(_magicAttacks[square] + index) = attacks;
@@ -226,7 +226,7 @@ std::vector<BitBoard> Rooks::genOccupancyVariations(Square square)
     std::vector<size_t> indexOfOnesInMask;
     for (size_t j = 0; j < 64; ++j)
         if (_moveMask[square] & (1LL << j))
-            indexOfOnesInMask.push_back(j);            
+            indexOfOnesInMask.push_back(j);
 
     for (BitBoard i = 0; i < variationCount; ++i)
     {
@@ -244,7 +244,3 @@ std::vector<BitBoard> Rooks::genOccupancyVariations(Square square)
 
 
 }
-
-
-        
-

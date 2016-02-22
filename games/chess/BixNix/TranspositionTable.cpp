@@ -3,14 +3,14 @@
 namespace BixNix
 {
 
-    TranspositionTable::TranspositionTable():
+TranspositionTable::TranspositionTable():
     _collisions(0),
     _misses(0),
     _hits(0),
     _size(0),
     _table(nullptr)
 {
-    
+
 }
 
 
@@ -25,7 +25,7 @@ TranspositionTable::TranspositionTable(const size_t size):
         _table[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
 }
 
-    
+
 TranspositionTable::~TranspositionTable()
 {
     if (nullptr == _table)
@@ -51,7 +51,7 @@ void TranspositionTable::resize(const size_t size)
         _table[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
 }
 
-   
+
 bool TranspositionTable::get(const ZobristNumber key,
                              const unsigned int priority,
                              int& alpha, int& beta,
@@ -86,7 +86,7 @@ bool TranspositionTable::get(const ZobristNumber key,
 }
 
 
-bool TranspositionTable::set(const ZobristNumber key, 
+bool TranspositionTable::set(const ZobristNumber key,
                              const int score, const unsigned int priority,
                              const int alpha, const int beta)
 {
@@ -122,7 +122,7 @@ size_t TranspositionTable::getOccupancy()
 
 size_t TranspositionTable::getSize()
 {
-    return _size; 
+    return _size;
 }
 
 }

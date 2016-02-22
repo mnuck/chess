@@ -58,7 +58,7 @@ BixNix::Move Chess::AI::siggame2bixnix(Chess::Move* m)
     else if (m->promotion == "Bishop")
     {
         promoteType = BixNix::Bishop;
-    } 
+    }
     else
     {
         promoteType = BixNix::Queen;

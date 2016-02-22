@@ -32,7 +32,6 @@ protected:
     std::array<BitBoard, 64> _magicNumber;
     std::array<BitBoard*, 64> _magicAttacks;
     BitBoard* _data;
-
 };
 
 }

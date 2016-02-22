@@ -16,14 +16,14 @@
 namespace BixNix
 {
 
-void Engine::end() 
+void Engine::end()
 {
     stopSearch();
-    
+
     LOG(trace) << _time << " time left";
 
     auto end_time = std::chrono::system_clock::now();
-    auto diff = 
+    auto diff =
         std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
     LOG(trace) << _node_expansions << " node expansions";
@@ -43,7 +43,7 @@ void Engine::end()
 
     size_t occupied(_ttable.getOccupancy());
     size_t ttableSize(_ttable.getSize());
-    
+
     LOG(trace) << (long)occupied << " cache slots occupied";
     LOG(trace) << (long)ttableSize << " cache slots total";
     LOG(trace) << occupied / static_cast<double>(ttableSize) << " occupancy" << std::endl;
@@ -52,7 +52,7 @@ void Engine::end()
 
 Move Engine::getMove()
 {
-    stopSearch(); // stop pondering
+//    stopSearch(); // stop pondering
     startSearch(); // start searching
 
     using namespace std::chrono;
@@ -79,7 +79,7 @@ Move Engine::getMove()
         {
             break;
         }
-        
+
         if (splits.size() > 3)
         {
             // assume exponential growth, extend the line
@@ -101,9 +101,10 @@ Move Engine::getMove()
     _3table.add(_board.getHash());
 
     LOG(trace) << "sending (" << move.score << ") " << move;
+    LOG(trace) << "board\n" << _board;
 
-    startSearch(); // start pondering
-   
+//    startSearch(); // start pondering
+
     return move;
 }
 
@@ -145,13 +146,13 @@ void Engine::search()
 /*
         for (int i = actions.size() - 1; i >= 0; --i)
             std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
-        
+
         std::cout << "*** " << depth << " (" << actions[0].score << ") " 
                   << actions[0] << std::endl;
 */
         _pv[0] = actions[0];
         std::stringstream ss;
-        
+
         ss << depth << " (" << actions[0].score << ") PV: ";
         for (Move& m : _pv)
         {
@@ -161,7 +162,7 @@ void Engine::search()
                 ss << m << " ";
             m = Move(0);
         }
-        LOG(trace) << ss.str();        
+        LOG(trace) << ss.str();
 
         ++depth;
     }
@@ -169,14 +170,14 @@ void Engine::search()
 
 int Engine::negamax(Board& board,
                     const unsigned int depth,
-                    int alpha, 
+                    int alpha,
                     int beta,
                     size_t pvHeight)
 {
     ++_node_expansions;
     if (_search_stop)
         return 0;
-    
+
     int result(-CHECKMATE);
 
     if (_ttable.get(board.getHash(), depth, alpha, beta, result))
@@ -186,8 +187,8 @@ int Engine::negamax(Board& board,
     {
         result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
         // result = quiescent(board, alpha, beta);
-    } 
-    else 
+    }
+    else
     {
         std::vector<Move> actions(board.getMoves(board._toMove));
         trimTrifoldRepetition(board, actions);
@@ -209,7 +210,7 @@ int Engine::negamax(Board& board,
         else
         {
             for (Move& m: actions)
-            {            
+            {
                 if (result >= beta)
                 {
                     ++_cutoffs;
@@ -240,14 +241,14 @@ int Engine::negamax(Board& board,
 
 int Engine::PVS(Board& board,
                 const unsigned int depth,
-                int alpha, 
+                int alpha,
                 int beta,
                 size_t pvHeight)
 {
     ++_node_expansions;
     if (_search_stop)
         return 0;
-    
+
     int result(-CHECKMATE);
 
     if (_ttable.get(board.getHash(), depth, alpha, beta, result))
@@ -258,8 +259,8 @@ int Engine::PVS(Board& board,
         result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
         // result = quiescent(board, alpha, beta);
         _ttable.set(board.getHash(), result, depth, alpha, beta);
-        return result; 
-    } 
+        return result;
+    }
 
     std::vector<Move> actions(board.getMoves(board._toMove));
     trimTrifoldRepetition(board, actions);
@@ -351,7 +352,7 @@ int Engine::PVS(Board& board,
     }
 
     _ttable.set(board.getHash(), result, depth, alpha, beta);
-    return result; 
+    return result;
 }
 
 
@@ -382,7 +383,7 @@ int Engine::quiescent(Board& board,
     {
         if (!m.getCapturing())
             continue;
-            
+
         didSomething = true;
         Board brd(board);
         brd.applyMove(m);
@@ -411,7 +412,7 @@ Engine::Engine():
     _node_expansions(0),
     _cutoffs(0)
 {
-    _ttable.resize(TTSIZE);   
+    _ttable.resize(TTSIZE);
 }
 
 
@@ -428,11 +429,11 @@ void Engine::startSearch()
         for (Move& m: _pv)
             m = Move(0);
         _search_stop = false;
-        _searcher = new std::thread(&Engine::search, this);        
-    }    
+        _searcher = new std::thread(&Engine::search, this);
+    }
 }
 
-    
+
 void Engine::stopSearch()
 {
     _search_stop = true;
@@ -455,9 +456,9 @@ void Engine::init(Color color, float time)
 
     _start_time = std::chrono::system_clock::now();
 
-    stopSearch();
+//    stopSearch();
     _board = Board::initial();
-    startSearch();
+//    startSearch();
 }
 
 
@@ -467,6 +468,7 @@ void Engine::reportMove(Move move, float time)
     _time = time;
     _board.applyExternalMove(move);
     _3table.add(_board.getHash());
+    LOG(trace) << "board\n" << _board;
 }
 
 

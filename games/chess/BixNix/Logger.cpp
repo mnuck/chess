@@ -18,11 +18,11 @@ BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
 BOOST_LOG_ATTRIBUTE_KEYWORD(p_id, "ProcessID", attributes::current_process_id::value_type);
 BOOST_LOG_ATTRIBUTE_KEYWORD(t_id, "ThreadID", attributes::current_thread_id::value_type);
 BOOST_LOG_ATTRIBUTE_KEYWORD(severity,  "Severity", trivial::severity_level)
- 
+
 BOOST_LOG_GLOBAL_LOGGER_INIT(logger, logger_t)
 {
     logger_t logger;
- 
+
     logger.add_attribute("TimeStamp", attributes::utc_clock());
     logger.add_attribute("ProcessID", attributes::current_process_id());
     logger.add_attribute("ThreadID", attributes::current_thread_id());
@@ -43,7 +43,7 @@ BOOST_LOG_GLOBAL_LOGGER_INIT(logger, logger_t)
                     << expressions::smessage
             )
         )
-    );        
+    );
 
     if (getenv("LOG_TO_FILE"))
     {
@@ -68,7 +68,7 @@ BOOST_LOG_GLOBAL_LOGGER_INIT(logger, logger_t)
             )
         );
     }
-    
+
     return logger;
 }
 
@@ -102,7 +102,7 @@ bool SetLogLevel(const unsigned int level)
         success = false;
         break;
     }
-    
+
     if (success)
         LOG(fatal) << "Logging level set to " << level << " (not actually fatal)";
 
@@ -117,5 +117,5 @@ ScopeLog::ScopeLog(std::string message):
 
 ScopeLog::~ScopeLog()
 {
-    LOG(trace) << "ScopeLog Exiting " << _message;    
+    LOG(trace) << "ScopeLog Exiting " << _message;
 }

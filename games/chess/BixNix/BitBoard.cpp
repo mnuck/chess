@@ -27,7 +27,7 @@ BitBoard smearN(BitBoard g, BitBoard p)
     g |= p & (g << 16);
     p &=     (p << 16);
     g |= p & (g << 32);
-    return g;    
+    return g;
 }
 
 
@@ -51,7 +51,7 @@ BitBoard smearE(BitBoard g, BitBoard p)
     g |= p & (g >>  2);
     p &=     (p >>  2);
     g |= p & (g >>  4);
-    return g;    
+    return g;
 }
 
 
@@ -65,7 +65,6 @@ BitBoard smearSE(BitBoard g, BitBoard p)
     g |= p & (g >> 36);
     return g;
 }
-
 
 
 BitBoard smearS(BitBoard g, BitBoard p)
@@ -111,11 +110,11 @@ BitBoard smearNW(BitBoard g, BitBoard p)
     g |= p & (g << 18);
     p &=     (p << 18);
     g |= p & (g << 36);
-    return g;    
+    return g;
 }
 
 
-BitBoard shiftN(BitBoard source) 
+BitBoard shiftN(BitBoard source)
 {
     return source << 8;
 }

@@ -17,5 +17,5 @@ bool ThreefoldTable::addWouldTrigger(const ZobristNumber key) const
 {
     return (_table.count(key) > 1);
 }
-    
+
 }
