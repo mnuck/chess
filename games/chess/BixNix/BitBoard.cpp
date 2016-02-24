@@ -1,13 +1,14 @@
 #include <bitset>
+#include <sstream>
 
 #include "BitBoard.h"
 
 namespace BixNix
 {
 
-
-std::ostream& operator<<(std::ostream& lhs, const BitBoard& rhs)
+std::string RenderBB(BitBoard rhs)
 {
+    std::stringstream lhs;
     lhs << std::bitset<8>(rhs >> 56) << std::endl;
     lhs << std::bitset<8>(rhs >> 48) << std::endl;
     lhs << std::bitset<8>(rhs >> 40) << std::endl;
@@ -16,7 +17,7 @@ std::ostream& operator<<(std::ostream& lhs, const BitBoard& rhs)
     lhs << std::bitset<8>(rhs >> 16) << std::endl;
     lhs << std::bitset<8>(rhs >> 8) << std::endl;
     lhs << std::bitset<8>(rhs >> 0) << std::endl;
-    return lhs;
+    return lhs.str();
 }
 
 
