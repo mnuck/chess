@@ -9,8 +9,7 @@
 namespace BixNix
 {
 
-
-std::ostream& operator<<(std::ostream& lhs, const BitBoard& rhs);
+std::string RenderBB(BitBoard bb);
 
 const BitBoard notAFile  = 0x7F7F7F7F7F7F7F7F;
 const BitBoard notABFile = 0x3F3F3F3F3F3F3F3F;
