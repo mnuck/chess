@@ -51,8 +51,6 @@ private:
     void stopSearch();
     void search();
 
-    void trimTrifoldRepetition(Board& board, std::vector<Move>& moves) const;
-
     Board _board;
     Color _color;
     float _time;
