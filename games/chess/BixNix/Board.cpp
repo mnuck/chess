@@ -142,7 +142,7 @@ bool Board::operator!=(const Board& rhs) const
 }
 
 
-void Board::debug()
+void Board::debug() const
 {
     LOG(trace) << "hash\n" << _hash;
     LOG(trace) << "ts " << _terminalState;
