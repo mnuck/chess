@@ -11,6 +11,8 @@
 #include "Rooks.h"
 #include "Zobrist.h"
 
+#include "Logger.h"
+
 namespace BixNix
 {
 
@@ -51,6 +53,92 @@ Board& Board::operator=(const Board& that)
     _epAvailable = that._epAvailable;
     _terminalState = that._terminalState;
     return *this;
+}
+
+bool Board::operator==(const Board& rhs) const
+{
+    bool result = true;
+
+    if (_hash != rhs._hash)
+    {
+        LOG(trace) << "hash is different";
+        result = false;
+    }
+    if (_moves != rhs._moves)
+    {
+        LOG(trace) << "moves is different";
+        result = false;
+    }
+    if (_dirty != rhs._dirty)
+    {
+        LOG(trace) << "dirty is different";
+        result = false;
+    }
+    if (_toMove != rhs._toMove)
+    {
+        LOG(trace) << "toMove is different";
+        result = false;
+    }
+    if (_epAvailable != rhs._epAvailable)
+    {
+        LOG(trace) << "EP Avail is different";
+        result = false;
+    }
+//    if (_terminalState != rhs._terminalState)
+//    {
+//        LOG(trace) << "TS is different";
+//        result = false;
+//    }
+    if (_colors != rhs._colors)
+    {
+        LOG(trace) << "Colors is different";
+        result = false;
+    }
+    if (_pieces != rhs._pieces)
+    {
+        LOG(trace) << "Pieces is different";
+        result = false;
+    }
+
+    if (!result)
+    {
+        LOG(trace) << "hash\n" << _hash << "\n" << rhs._hash;
+        LOG(trace) << "ts " << _terminalState << " " << rhs._terminalState;
+        LOG(trace) << "ep " << _epAvailable << " "<< rhs._epAvailable;
+        LOG(trace) << "toMove " << _toMove << " " << rhs._toMove;
+
+        
+        LOG(trace) << "LHS moves";
+        for (auto& m : _moves)
+        {
+            LOG(trace) << m;
+        }
+
+        LOG(trace) << "RHS moves";
+        for (auto& m : rhs._moves)
+        {
+            LOG(trace) << m;
+        }
+
+        LOG(trace) << "dirty\n" << RenderBB(_dirty) << "\n---\n" << RenderBB(rhs._dirty);
+        LOG(trace) << "colors";
+        LOG(trace) << "White\n" << RenderBB(_colors[White]) << "\n---\n" << RenderBB(rhs._colors[White]);
+        LOG(trace) << "Black\n" << RenderBB(_colors[Black]) << "\n---\n" << RenderBB(rhs._colors[Black]);
+        LOG(trace) << "pieces";
+        LOG(trace) << "Knight\n" << RenderBB(_pieces[Knight]) << "\n---\n" << RenderBB(rhs._pieces[Knight]);
+        LOG(trace) << "Rook\n" << RenderBB(_pieces[Rook]) << "\n---\n" << RenderBB(rhs._pieces[Rook]);
+        LOG(trace) << "Bishop\n" << RenderBB(_pieces[Bishop]) << "\n---\n" << RenderBB(rhs._pieces[Bishop]);
+        LOG(trace) << "Queen\n" << RenderBB(_pieces[Queen]) << "\n---\n" << RenderBB(rhs._pieces[Queen]);
+        LOG(trace) << "King\n" << RenderBB(_pieces[King]) << "\n---\n" << RenderBB(rhs._pieces[King]);
+        LOG(trace) << "Pawn\n" << RenderBB(_pieces[Pawn]) << "\n---\n" << RenderBB(rhs._pieces[Pawn]);        
+    }
+
+    return result;
+}
+
+bool Board::operator!=(const Board& rhs) const
+{
+    return !(*this == rhs);
 }
 
 
