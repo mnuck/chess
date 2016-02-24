@@ -1,3 +1,5 @@
+#include <bitset>
+#include <sstream>
 #include <iostream>
 
 #include "Move.h"
@@ -180,6 +182,13 @@ std::ostream& operator<<(std::ostream& lhs, const Move& rhs)
 bool Move::operator==(const Move& rhs) const
 {
     return _data == rhs._data;
+}
+
+std::string Move::debug()
+{
+    std::stringstream ss;
+    ss << std::bitset<32>(_data);
+    return ss.str();
 }
 
 }
