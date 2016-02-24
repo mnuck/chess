@@ -335,7 +335,6 @@ void Board::applyMove(const Move move)
         Square rookTarget;
         if (White == movingColor)
         {
-            _hash ^= Zobrist::GetInstance().getWKCastle();
             if (move.getCastlingDirection() == true)
             {
                 _hash ^= Zobrist::GetInstance().getWKCastle();
@@ -365,8 +364,8 @@ void Board::applyMove(const Move move)
         _colors[movingColor] &= ~rookSourceBB;
         _colors[movingColor] |=  rookTargetBB;
         _dirty |= rookSourceBB;
-        _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookSource);
-        _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookTarget);
+        _hash ^= Zobrist::GetInstance().getZobrist(movingColor, Rook, rookSource);
+        _hash ^= Zobrist::GetInstance().getZobrist(movingColor, Rook, rookTarget);
     }
 }
 
@@ -458,7 +457,6 @@ void Board::unapplyMove(const Move move)
         Square rookTarget;
         if (White == _toMove)
         {
-            _hash ^= Zobrist::GetInstance().getWKCastle();
             if (move.getCastlingDirection() == true)
             {
                 _hash ^= Zobrist::GetInstance().getWKCastle();
@@ -488,8 +486,8 @@ void Board::unapplyMove(const Move move)
         _colors[_toMove] |= rookSourceBB;
         _colors[_toMove] &= ~rookTargetBB;
         _dirty &= ~rookSourceBB;
-        _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookSource);
-        _hash ^= Zobrist::GetInstance().getZobrist(_toMove, Rook, rookTarget);
+        _hash ^= Zobrist::GetInstance().getZobrist(movingColor, Rook, rookSource);
+        _hash ^= Zobrist::GetInstance().getZobrist(movingColor, Rook, rookTarget);
     }
 }
 
