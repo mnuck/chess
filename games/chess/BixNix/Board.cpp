@@ -54,6 +54,34 @@ Board& Board::operator=(const Board& that)
 }
 
 
+void Board::debug()
+{
+    LOG(trace) << "hash\n" << _hash;
+    LOG(trace) << "ts " << _terminalState;
+    LOG(trace) << "ep " << _epAvailable;
+    LOG(trace) << "toMove " << _toMove;
+
+    LOG(trace) << "moves";
+    for (auto& m : _moves)
+    {
+        LOG(trace) << m;
+    }
+
+    LOG(trace) << "dirty\n" << RenderBB(_dirty);
+    LOG(trace) << "colors";
+    LOG(trace) << "White\n" << RenderBB(_colors[White]);
+    LOG(trace) << "Black\n" << RenderBB(_colors[Black]);
+    
+    LOG(trace) << "pieces";
+    LOG(trace) << "Knight\n" << RenderBB(_pieces[Knight]);
+    LOG(trace) << "Rook\n" << RenderBB(_pieces[Rook]);
+    LOG(trace) << "Bishop\n" << RenderBB(_pieces[Bishop]);
+    LOG(trace) << "Queen\n" << RenderBB(_pieces[Queen]);
+    LOG(trace) << "King\n" << RenderBB(_pieces[King]);
+    LOG(trace) << "Pawn\n" << RenderBB(_pieces[Pawn]);
+    
+}
+
 Board::~Board() {}
 
 void Board::applyExternalMove(const Move extMove)
