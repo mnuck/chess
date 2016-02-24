@@ -111,8 +111,7 @@ Move Engine::getMove()
 
 void Engine::search()
 {
-    Board searchBoard(_board);
-    std::vector<Move> actions(searchBoard.getMoves(searchBoard._toMove));
+    std::vector<Move> actions(_board.getMoves(_board._toMove));
     if (actions.size() == 0)
         return;
 
@@ -126,12 +125,16 @@ void Engine::search()
 
         for (Move& m : actions)
         {
-            searchBoard.applyMove(m);
-            _3table.add(searchBoard.getHash());
-            m.score = - negamax(searchBoard, depth);
-            //m.score = - PVS(searchBoard, depth);
-            _3table.remove(searchBoard.getHash());
-            searchBoard.unapplyMove(m);
+            _board.applyMove(m);
+            if (_3table.addWouldTrigger(_board.getHash()))
+            {
+                m.score = (- CHECKMATE) + 1;
+            } else {
+                _3table.add(_board.getHash());
+                m.score = - negamax(depth);
+                _3table.remove(_board.getHash());                
+            }
+            _board.unapplyMove(m);
             if (_search_stop)
                 return;
         }
@@ -167,8 +170,7 @@ void Engine::search()
     }
 }
 
-int Engine::negamax(Board& board,
-                    const unsigned int depth,
+int Engine::negamax(const unsigned int depth,
                     int alpha,
                     int beta,
                     size_t pvHeight)
@@ -179,18 +181,16 @@ int Engine::negamax(Board& board,
 
     int result(-CHECKMATE);
 
-    if (_ttable.get(board.getHash(), depth, alpha, beta, result))
+    if (_ttable.get(_board.getHash(), depth, alpha, beta, result))
         return result;
 
     if (0 == depth)
     {
-        result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
-        // result = quiescent(board, alpha, beta);
+        result = Evaluate::GetInstance().getEvaluation(std::ref(_board), _board._toMove);
     }
     else
     {
-        std::vector<Move> actions(board.getMoves(board._toMove));
-
+        std::vector<Move> actions(_board.getMoves(_board._toMove));
         // PV move reordering, not a full sort
         for (Move& m: actions)
         {
@@ -201,7 +201,7 @@ int Engine::negamax(Board& board,
             }
         }
 
-        if (actions.size() == 0 && !board.inCheckmate(board._toMove))
+        if (actions.size() == 0 && !_board.inCheckmate(_board._toMove))
         {
             result = 0; // stalemate
         }
@@ -214,11 +214,16 @@ int Engine::negamax(Board& board,
                     ++_cutoffs;
                     break;
                 }
-                board.applyMove(m);
-                _3table.add(board.getHash());
-                m.score = - negamax(board, depth - 1, -beta, -alpha, pvHeight + 1);
-                _3table.remove(board.getHash());
-                board.unapplyMove(m);
+                _board.applyMove(m);
+                if (_3table.addWouldTrigger(_board.getHash()))
+                {
+                    m.score = (- CHECKMATE) + 1;
+                } else {
+                    _3table.add(_board.getHash());
+                    m.score = - negamax(depth - 1, -beta, -alpha, pvHeight + 1);
+                    _3table.remove(_board.getHash());                    
+                }
+                _board.unapplyMove(m);
                 if (_search_stop)
                     return 0;
 
@@ -232,6 +237,7 @@ int Engine::negamax(Board& board,
         }
     }
 
+    _ttable.set(_board.getHash(), result, depth, alpha, beta);
     _ttable.set(board.getHash(), result, depth, alpha, beta);
     return result;
 }
