@@ -21,7 +21,6 @@ class Board
 {
 public:
     friend std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
-    friend class Engine;
     friend class Evaluate;
 
     Board();
@@ -37,6 +36,7 @@ public:
 
     void applyExternalMove(const Move extMove);
 
+    Color getMover() const { return _toMove; }
     ZobristNumber getHash() const { return _hash; }
     TerminalState getTerminalState() const { return _terminalState; }
     uint64_t perft(const int depth);

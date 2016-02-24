@@ -111,7 +111,7 @@ Move Engine::getMove()
 
 void Engine::search()
 {
-    std::vector<Move> actions(_board.getMoves(_board._toMove));
+    std::vector<Move> actions(_board.getMoves(_board.getMover()));
     if (actions.size() == 0)
         return;
 
@@ -179,11 +179,11 @@ int Engine::negamax(const unsigned int depth,
 
     if (0 == depth)
     {
-        result = Evaluate::GetInstance().getEvaluation(std::ref(_board), _board._toMove);
+        result = Evaluate::GetInstance().getEvaluation(_board, _board.getMover());
     }
     else
     {
-        std::vector<Move> actions(_board.getMoves(_board._toMove));
+        std::vector<Move> actions(_board.getMoves(_board.getMover()));
         // PV move reordering, not a full sort
         for (Move& m: actions)
         {
@@ -194,7 +194,7 @@ int Engine::negamax(const unsigned int depth,
             }
         }
 
-        if (actions.size() == 0 && !_board.inCheckmate(_board._toMove))
+        if (actions.size() == 0 && !_board.inCheckmate(_board.getMover()))
         {
             result = 0; // stalemate
         }
