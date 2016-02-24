@@ -29,6 +29,8 @@ public:
     Board& operator=(const Board& that);
     ~Board();
 
+    void debug();
+
     std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true);
 
     void applyExternalMove(const Move extMove);
