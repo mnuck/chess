@@ -433,8 +433,10 @@ void Board::unapplyMove(const Move move)
     if (move.getPromoting())
     {
         const Piece promotionPiece(move.getPromotionPiece());
-        _pieces[Pawn] |= source;
-        _pieces[promotionPiece] &= ~source;
+        if (!move.getCapturing())
+            _pieces[promotionPiece] &= ~target;
+        else if (promotionPiece != move.getCapturedPiece())
+            _pieces[promotionPiece] &= ~target;
         _hash ^= Zobrist::GetInstance().getZobrist(movingColor, Pawn, targetSq);
         _hash ^= Zobrist::GetInstance().getZobrist(movingColor, promotionPiece, targetSq);
     }
