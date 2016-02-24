@@ -856,7 +856,7 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
                 result.emplace_back(Move(kingLoc, kingLoc - 2,
                                          King, Pawn, Pawn,
                                          false, false, false, false,
-                                         -1, true, true, true, true));
+                                         -1, true, true, true, false));
             }
         }
         if (!WQRookMoved())
@@ -869,7 +869,7 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
                 result.emplace_back(Move(kingLoc, kingLoc + 2,
                                          King, Pawn, Pawn,
                                          false, false, false, false,
-                                         -1, true, false, true, true));
+                                         -1, true, false, true, false));
             }
         }
     } 
@@ -893,7 +893,7 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
                 result.emplace_back(Move(kingLoc, kingLoc - 2,
                                          King, Pawn, Pawn,
                                          false, false, false, false,
-                                         -1, true, true, true, true));
+                                         -1, true, true, true, false));
             }
         }
         if (!BQRookMoved())
@@ -906,7 +906,7 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const
                 result.emplace_back(Move(kingLoc, kingLoc + 2,
                                          King, Pawn, Pawn,
                                          false, false, false, false,
-                                         -1, true, false, true, true));
+                                         -1, true, false, true, false));
             }
         }
     }
