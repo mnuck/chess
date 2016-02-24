@@ -33,6 +33,8 @@ public:
 
     operator uint32_t() const { return _data; }
 
+    std::string debug();
+
     Square getSource() const;
     Square getTarget() const;
 
