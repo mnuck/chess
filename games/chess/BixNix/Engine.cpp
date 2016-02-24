@@ -231,7 +231,6 @@ int Engine::negamax(const unsigned int depth,
     }
 
     _ttable.set(_board.getHash(), result, depth, alpha, beta);
-    _ttable.set(board.getHash(), result, depth, alpha, beta);
     return result;
 }
 
@@ -253,13 +252,13 @@ int Engine::PVS(Board& board,
 
     if (0 == depth)
     {
-        result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
+        result = Evaluate::GetInstance().getEvaluation(std::ref(board), board.getMover());
         // result = quiescent(board, alpha, beta);
         _ttable.set(board.getHash(), result, depth, alpha, beta);
         return result;
     }
 
-    std::vector<Move> actions(board.getMoves(board._toMove));
+    std::vector<Move> actions(board.getMoves(board.getMover()));
 
     for (Move& m: actions)
     {
@@ -273,13 +272,13 @@ int Engine::PVS(Board& board,
     if (actions.size() == 0)
     {
         TerminalState ts = board.getTerminalState();
-        if (WhiteWin == ts && board._toMove == Black)
+        if (WhiteWin == ts && board.getMover() == Black)
             result = - CHECKMATE;
-        else if (BlackWin == ts && board._toMove == White)
+        else if (BlackWin == ts && board.getMover() == White)
             result = - CHECKMATE;
-        else if (WhiteWin == ts && board._toMove == White)
+        else if (WhiteWin == ts && board.getMover() == White)
             result = CHECKMATE;
-        else if (BlackWin == ts && board._toMove == Black)
+        else if (BlackWin == ts && board.getMover() == Black)
             result = CHECKMATE;
         else
             result = 0;
@@ -364,10 +363,10 @@ int Engine::quiescent(Board& board,
     if (_ttable.get(board.getHash(), 0, alpha, beta, result))
         return result;
 
-    std::vector<Move> actions(board.getMoves(board._toMove));
+    std::vector<Move> actions(board.getMoves(board.getMover()));
     if (actions.size() == 0)
     {
-        if (!board.inCheckmate(board._toMove))
+        if (!board.inCheckmate(board.getMover()))
         {
             return 0;
         }
@@ -394,7 +393,7 @@ int Engine::quiescent(Board& board,
 
     }
     if (!didSomething)
-        alpha = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
+        alpha = Evaluate::GetInstance().getEvaluation(std::ref(board), board.getMover());
 
     _ttable.set(board.getHash(), alpha, 0, alpha, beta);
     return alpha;
