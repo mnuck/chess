@@ -11,6 +11,8 @@ namespace BixNix
 
 std::string RenderBB(BitBoard bb);
 
+std::string RenderBB(BitBoard bb);
+
 const BitBoard notAFile  = 0x7F7F7F7F7F7F7F7F;
 const BitBoard notABFile = 0x3F3F3F3F3F3F3F3F;
 const BitBoard notHFile  = 0xFEFEFEFEFEFEFEFE;

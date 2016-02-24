@@ -36,6 +36,8 @@ private:
             int alpha=-CHECKMATE,
             int beta=CHECKMATE,
             size_t pvHeight=1);
+
+    int negamax(const unsigned int depth,
                 int alpha=-CHECKMATE,
                 int beta=CHECKMATE,
                 size_t pvHeight=1);

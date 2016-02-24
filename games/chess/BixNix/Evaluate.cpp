@@ -1,3 +1,4 @@
+#include "Logger.h"
 #include "Evaluate.h"
 
 namespace BixNix
@@ -6,17 +7,16 @@ namespace BixNix
 int Evaluate::getEvaluation(Board& board, const Color color)
 {
     int result = 0;
-
-    if (board.inCheckmate(board._toMove))
+    if (board.inCheckmate(board.getMover()))
     {
-        if (board._toMove == color)
+        if (board.getMover() == color)
             return -CHECKMATE;
         else
             return CHECKMATE;
     }
 
-    result += materialEval(std::ref(board));
-    result += pieceSquareEval(std::ref(board));
+    result += materialEval(board);
+    result += pieceSquareEval(board);
     if (Black == color)
         result *= -1;
 
