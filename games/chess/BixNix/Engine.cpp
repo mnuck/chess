@@ -113,7 +113,6 @@ void Engine::search()
 {
     Board searchBoard(_board);
     std::vector<Move> actions(searchBoard.getMoves(searchBoard._toMove));
-    trimTrifoldRepetition(searchBoard, actions);
     if (actions.size() == 0)
         return;
 
@@ -191,7 +190,6 @@ int Engine::negamax(Board& board,
     else
     {
         std::vector<Move> actions(board.getMoves(board._toMove));
-        trimTrifoldRepetition(board, actions);
 
         // PV move reordering, not a full sort
         for (Move& m: actions)
@@ -263,7 +261,6 @@ int Engine::PVS(Board& board,
     }
 
     std::vector<Move> actions(board.getMoves(board._toMove));
-    trimTrifoldRepetition(board, actions);
 
     for (Move& m: actions)
     {
@@ -369,7 +366,6 @@ int Engine::quiescent(Board& board,
         return result;
 
     std::vector<Move> actions(board.getMoves(board._toMove));
-    trimTrifoldRepetition(board, actions);
     if (actions.size() == 0)
     {
         if (!board.inCheckmate(board._toMove))
@@ -471,23 +467,5 @@ void Engine::reportMove(Move move, float time)
     LOG(trace) << "board\n" << _board;
 }
 
-
-void Engine::trimTrifoldRepetition(Board& board, std::vector<Move>& actions) const
-{
-    // trim trifold repetition moves for now
-    actions.erase(
-        std::remove_if(
-            actions.begin(),
-            actions.end(),
-            [&] (Move& move) -> bool
-            {
-                bool result = false;
-                board.applyMove(move);
-                if (_3table.addWouldTrigger(board.getHash()))
-                    result = true;
-                board.unapplyMove(move);
-            }),
-        actions.end());
-}
 
 }
