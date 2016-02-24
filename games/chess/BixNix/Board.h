@@ -29,6 +29,8 @@ public:
     Board& operator=(const Board& that);
     ~Board();
 
+    bool operator==(const Board& rhs) const;
+    bool operator!=(const Board& rhs) const;
     void debug();
 
     std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true);
