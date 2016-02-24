@@ -145,13 +145,6 @@ void Engine::search()
 
         _best_move = actions[0];
         _best_move_ready.notify_all();
-/*
-        for (int i = actions.size() - 1; i >= 0; --i)
-            std::cout << "(" << actions[i].score << ") " << actions[i] << std::endl;
-
-        std::cout << "*** " << depth << " (" << actions[0].score << ") " 
-                  << actions[0] << std::endl;
-*/
         _pv[0] = actions[0];
         std::stringstream ss;
 
