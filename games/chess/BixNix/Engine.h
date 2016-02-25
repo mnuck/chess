@@ -8,6 +8,7 @@
 #include <chrono>
 #include <climits>
 #include <condition_variable>
+#include <memory>
 #include <thread>
 
 #include "Enums.h"
@@ -57,7 +58,7 @@ private:
     static const int HEIGHTMAX = 16;
     std::array<Move, HEIGHTMAX> _pv; // Principal Variation
 
-    std::thread* _searcher;
+    std::shared_ptr<std::thread> _searcher;
     bool _search_stop;
     Move _best_move;
     std::condition_variable _best_move_ready;

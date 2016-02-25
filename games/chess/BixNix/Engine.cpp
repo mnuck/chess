@@ -424,7 +424,7 @@ void Engine::startSearch()
         for (Move& m: _pv)
             m = Move(0);
         _search_stop = false;
-        _searcher = new std::thread(&Engine::search, this);
+        _searcher = std::make_shared<std::thread>(&Engine::search, this);
     }
 }
 
@@ -432,13 +432,9 @@ void Engine::startSearch()
 void Engine::stopSearch()
 {
     _search_stop = true;
-    if (_searcher != nullptr)
+    if (_searcher)
     {
-        if (_searcher->joinable())
-        {
-            _searcher->join();
-        }
-        delete _searcher;
+        _searcher->join();
         _searcher = nullptr;
     }
 }
