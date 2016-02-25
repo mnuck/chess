@@ -141,11 +141,12 @@ void Engine::search()
                 return;
         }
 
-        std::sort(actions.begin(), actions.end(),
-                  [&](const Move& a, const Move& b) -> bool
-                  { return a.score > b.score; });
+        for (auto& m: actions)
+        {
+            if (m.score > _best_move.score)
+                _best_move = m;
+        }
 
-        _best_move = actions[0];
         _best_move_ready.notify_all();
         _pv[0] = actions[0];
         std::stringstream ss;
