@@ -194,7 +194,8 @@ int Engine::negamax(const unsigned int depth,
             }
         }
 
-        if (actions.size() == 0 && !_board.inCheckmate(_board.getMover()))
+        if ((actions.size() == 0 && !_board.inCheckmate(_board.getMover()))
+            || (_board.isDraw100()))
         {
             result = 0; // stalemate
         }
