@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "BitBoard.h"
+#include "BNStack.h"
 #include "Enums.h"
 #include "Move.h"
 
@@ -82,7 +83,8 @@ private:
 
     std::array<BitBoard, 6> _pieces;
     std::array<BitBoard, 2> _colors;
-    std::vector<Move> _moves;
+    BNStack<Move, 20> _moves;
+    BNStack<int, 20> _draw100Counter;
     BitBoard _dirty;
     Color _toMove;
     ZobristNumber _hash;

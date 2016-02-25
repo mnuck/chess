@@ -64,11 +64,6 @@ bool Board::operator==(const Board& rhs) const
         LOG(trace) << "hash is different";
         result = false;
     }
-    if (_moves != rhs._moves)
-    {
-        LOG(trace) << "moves is different";
-        result = false;
-    }
     if (_dirty != rhs._dirty)
     {
         LOG(trace) << "dirty is different";
@@ -107,19 +102,6 @@ bool Board::operator==(const Board& rhs) const
         LOG(trace) << "ep " << _epAvailable << " "<< rhs._epAvailable;
         LOG(trace) << "toMove " << _toMove << " " << rhs._toMove;
 
-        
-        LOG(trace) << "LHS moves";
-        for (auto& m : _moves)
-        {
-            LOG(trace) << m;
-        }
-
-        LOG(trace) << "RHS moves";
-        for (auto& m : rhs._moves)
-        {
-            LOG(trace) << m;
-        }
-
         LOG(trace) << "dirty\n" << RenderBB(_dirty) << "\n---\n" << RenderBB(rhs._dirty);
         LOG(trace) << "colors";
         LOG(trace) << "White\n" << RenderBB(_colors[White]) << "\n---\n" << RenderBB(rhs._colors[White]);
@@ -148,13 +130,6 @@ void Board::debug() const
     LOG(trace) << "ts " << _terminalState;
     LOG(trace) << "ep " << _epAvailable;
     LOG(trace) << "toMove " << _toMove;
-
-    LOG(trace) << "moves";
-    for (auto& m : _moves)
-    {
-        LOG(trace) << m;
-    }
-
     LOG(trace) << "dirty\n" << RenderBB(_dirty);
     LOG(trace) << "colors";
     LOG(trace) << "White\n" << RenderBB(_colors[White]);
@@ -194,7 +169,6 @@ void Board::applyExternalMove(const Move extMove)
 
     bool sourceDirtied = !(_dirty & sourceBB);
     bool targetDirtied = !(_dirty & targetBB);
-
 
     for (size_t i = 0; i < 6; ++i)
     {
@@ -244,6 +218,7 @@ void Board::applyExternalMove(const Move extMove)
         }
     }
 
+    _moves.clear();
     applyMove(
         Move(sourceSq, targetSq,
              movingPiece, capturedPiece, promotionPiece,
@@ -258,7 +233,7 @@ void Board::applyMove(const Move move)
     if (_terminalState != Running)
         return;
 
-    _moves.push_back(move);
+    _moves.push(move);
     
     _hash ^= Zobrist::GetInstance().getBlackToMove();
     if (_epAvailable != -1)
@@ -374,7 +349,7 @@ void Board::unapplyMove(const Move move)
 {
     _terminalState = Running;
 
-    _moves.pop_back();
+    _moves.pop();
 
     _hash ^= Zobrist::GetInstance().getBlackToMove();
     if (_epAvailable != -1)
@@ -444,7 +419,7 @@ void Board::unapplyMove(const Move move)
     size_t movesSize = _moves.size();
     if (movesSize > 0)
     {
-        const Move& previousMove(_moves[movesSize - 1]);
+        const Move& previousMove(_moves.top());
         if (previousMove.getDoublePushing())
         {
             int file(previousMove.getEnPassantTargetFile());
