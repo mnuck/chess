@@ -27,13 +27,15 @@ void Engine::end()
         std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
     LOG(trace) << _node_expansions << " node expansions";
-    LOG(trace) << diff.count() << " seconds";
     LOG(trace) << _cutoffs << " cutoffs";
+    LOG(trace) << diff.count() << " seconds";
 
+    LOG(trace) << _cutoffs / static_cast<double>(_node_expansions + _cutoffs)
+               << " cutoff ratio";
     LOG(trace) << _node_expansions / static_cast<double>(diff.count())
                << " expansions per second";
-    LOG(trace) << _cutoffs / static_cast<double>(_node_expansions) 
-              << " cutoff ratio";
+    LOG(trace) << (_node_expansions + _cutoffs) / static_cast<double>(diff.count())
+               << " nodes considered per second";
 
     LOG(trace) << _ttable._collisions << " cache collisions";
     LOG(trace) << _ttable._hits << " cache hits";
@@ -201,13 +203,15 @@ int Engine::negamax(const unsigned int depth,
         }
         else
         {
+            int left = actions.size();
             for (Move& m: actions)
             {
                 if (result >= beta)
                 {
-                    ++_cutoffs;
+                    _cutoffs += left;
                     break;
                 }
+                --left;
                 _board.applyMove(m);
                 if (_3table.addWouldTrigger(_board.getHash()))
                 {
