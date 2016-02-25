@@ -10,6 +10,7 @@
 #include "Pawns.h"
 #include "Rooks.h"
 #include "Zobrist.h"
+#include "Evaluate.h"
 
 #include "Logger.h"
 
@@ -991,6 +992,30 @@ std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate)
 
     if (result.size() == 0)
         _terminalState = Draw;
+
+    auto& materialCost = Evaluate::GetInstance().getMaterial();
+
+    for (auto& m : result)
+    {
+        m.score = 0;
+        if (m.getCastling())
+            m.score += 1000;
+        if (m.getEnPassanting())
+            m.score += 1000;
+        if (m.getPromoting())
+            m.score += 1000;
+        if (m.getCapturing())
+        {
+            m.score += 1000;
+            int attackerCost = materialCost[m.getMovingPiece()];
+            int defenderCost = materialCost[m.getCapturedPiece()];
+            m.score += (defenderCost - attackerCost);
+        }
+    }
+
+    std::make_heap(result.begin(), result.end(),
+                   [&](const Move& a, const Move& b) -> bool
+                   { return a.score < b.score; });
 
     return result;
 }
