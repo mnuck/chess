@@ -28,6 +28,24 @@ void Chess::AI::gameUpdated() {}
 
 void Chess::AI::ended(bool won, std::string reason)
 {
+    if (getenv("REPORT"))
+    {
+        int fd = open("results.log", O_APPEND | O_WRONLY);
+        std::string message = "";
+        if (won)
+            message += "Win,";
+        else
+            message += "Loss,";
+    
+        message += player->color;
+        message += ",";
+        message += reason;
+
+        message += "\n";
+        int junk = write(fd, message.c_str(), message.size());
+        close(fd);
+    }    
+    
     _engine.end();
 }
 
