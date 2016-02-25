@@ -32,6 +32,7 @@ Board::Board(const Board& that):
     _pieces(that._pieces),
     _colors(that._colors),
     _moves(that._moves),
+    _draw100Counter(that._draw100Counter),
     _dirty(that._dirty),
     _toMove(that._toMove),
     _hash(that._hash),
@@ -48,6 +49,7 @@ Board& Board::operator=(const Board& that)
     _colors = that._colors;
     _dirty  = that._dirty;
     _moves  = that._moves;
+    _draw100Counter = that._draw100Counter;
     _toMove = that._toMove;
     _hash = that._hash;
     _epAvailable = that._epAvailable;
@@ -219,6 +221,10 @@ void Board::applyExternalMove(const Move extMove)
     }
 
     _moves.clear();
+    int temp = _draw100Counter.top();
+    _draw100Counter.clear();
+    _draw100Counter.push(temp);
+    
     applyMove(
         Move(sourceSq, targetSq,
              movingPiece, capturedPiece, promotionPiece,
@@ -234,6 +240,10 @@ void Board::applyMove(const Move move)
         return;
 
     _moves.push(move);
+    if (move.getCapturing() || move.getEnPassanting() || (move.getMovingPiece() == Pawn))
+        _draw100Counter.push(0);
+    else
+        _draw100Counter.push(_draw100Counter.top() + 1);
     
     _hash ^= Zobrist::GetInstance().getBlackToMove();
     if (_epAvailable != -1)
@@ -350,6 +360,7 @@ void Board::unapplyMove(const Move move)
     _terminalState = Running;
 
     _moves.pop();
+    _draw100Counter.pop();
 
     _hash ^= Zobrist::GetInstance().getBlackToMove();
     if (_epAvailable != -1)
@@ -982,6 +993,17 @@ std::vector<Move> Board::getMoves(const Color color, const bool checkCheckmate)
         _terminalState = Draw;
 
     return result;
+}
+
+
+bool Board::isDraw100()
+{
+    if (100 == _draw100Counter.top())
+    {
+        _terminalState = Draw;
+        return true;
+    }
+    return false;
 }
 
 

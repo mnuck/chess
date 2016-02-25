@@ -45,6 +45,7 @@ public:
     static Board initial();
     static Board parseEPD(std::istream& inFile);
 
+    bool isDraw100();
     bool inCheck(const Color color) const;
     bool inCheckmate(const Color color);
     void applyMove(const Move move);
