@@ -130,6 +130,7 @@ void Engine::search()
 
         for (Move& m : actions)
         {
+            _searcher_starting.notify_all(); // second chance
             _board.applyMove(m);
             if (_3table.addWouldTrigger(_board.getHash()))
             {
