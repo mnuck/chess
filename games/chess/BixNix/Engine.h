@@ -76,7 +76,7 @@ private:
     unsigned long long _cutoffs;
     std::chrono::time_point<std::chrono::system_clock> _start_time;
 
-    static const int TTSIZE = 16777216;
+    static const int TTSIZE = 33554432;
     TranspositionTable _ttable;
     ThreefoldTable _3table;
 };
