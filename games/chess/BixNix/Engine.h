@@ -5,6 +5,7 @@
 #ifndef __ENGINE_H__
 #define __ENGINE_H__
 
+#include <atomic>
 #include <chrono>
 #include <climits>
 #include <condition_variable>
@@ -59,10 +60,17 @@ private:
     std::array<Move, HEIGHTMAX> _pv; // Principal Variation
 
     std::shared_ptr<std::thread> _searcher;
-    bool _search_stop;
+    std::atomic_bool _search_stop;
+    std::atomic_bool _search_running;
+
     Move _best_move;
     std::condition_variable _best_move_ready;
+    std::condition_variable _searcher_starting;
+    
+
     std::mutex _cvMutex;
+    std::mutex _awaitSearcherMutex;
+    
 
     unsigned long long _node_expansions;
     unsigned long long _cutoffs;
