@@ -187,15 +187,6 @@ int Engine::negamax(const unsigned int depth,
     else
     {
         std::vector<Move> actions(_board.getMoves(_board.getMover()));
-        // PV move reordering, not a full sort
-        for (Move& m: actions)
-        {
-            if (m == _pv[pvHeight])
-            {
-                std::swap(m, actions[0]);
-                break;
-            }
-        }
 
         if ((actions.size() == 0 && !_board.inCheckmate(_board.getMover()))
             || (_board.isDraw100()))
@@ -230,129 +221,12 @@ int Engine::negamax(const unsigned int depth,
                 if (result > alpha)
                 {
                     alpha = result;
-                    _pv[pvHeight] = m;
                 }
             }
         }
     }
 
     _ttable.set(_board.getHash(), result, depth, alpha, beta);
-    return result;
-}
-
-
-int Engine::PVS(Board& board,
-                const unsigned int depth,
-                int alpha,
-                int beta,
-                size_t pvHeight)
-{
-    ++_node_expansions;
-    if (_search_stop)
-        return 0;
-
-    int result(-CHECKMATE);
-
-    if (_ttable.get(board.getHash(), depth, alpha, beta, result))
-        return result;
-
-    if (0 == depth)
-    {
-        result = Evaluate::GetInstance().getEvaluation(std::ref(board), board.getMover());
-        // result = quiescent(board, alpha, beta);
-        _ttable.set(board.getHash(), result, depth, alpha, beta);
-        return result;
-    }
-
-    std::vector<Move> actions(board.getMoves(board.getMover()));
-
-    for (Move& m: actions)
-    {
-        if (m == _pv[pvHeight])
-        {
-            std::swap(m, actions[0]);
-            break;
-        }
-    }
-
-    if (actions.size() == 0)
-    {
-        TerminalState ts = board.getTerminalState();
-        if (WhiteWin == ts && board.getMover() == Black)
-            result = - CHECKMATE;
-        else if (BlackWin == ts && board.getMover() == White)
-            result = - CHECKMATE;
-        else if (WhiteWin == ts && board.getMover() == White)
-            result = CHECKMATE;
-        else if (BlackWin == ts && board.getMover() == Black)
-            result = CHECKMATE;
-        else
-            result = 0;
-
-        _ttable.set(board.getHash(), result, depth, alpha, beta);
-        return result; // stalemate
-    }
-
-    //Board brd(board.applyMove(actions[0]));
-    Board brd(board);
-    brd.applyMove(actions[0]);
-    result = - PVS(brd, depth - 1, -beta, -alpha, pvHeight + 1);
-    if (_search_stop)
-        return 0;
-
-    if (result > alpha)
-    {
-        if (result >= beta)
-        {
-            _ttable.set(board.getHash(), result, depth, alpha, beta);
-            return result;
-        }
-        alpha = result;
-    }
-
-    if (actions.size() == 1)
-    {
-        _ttable.set(board.getHash(), result, depth, alpha, beta);
-        return result;
-    }
-
-    for (size_t i = 1; i < actions.size(); ++i)
-    {
-        //Board brd(board.applyMove(actions[i]));
-        Board brd(board);
-        brd.applyMove(actions[i]);
-
-
-        int score = - PVS(brd, depth - 1, -alpha - 1, -alpha, pvHeight + 1);
-        if (_search_stop)
-            return 0;
-
-        if (score > alpha && score < beta)
-        {
-            score = - PVS(brd, depth - 1, -beta, -alpha, pvHeight + 1);
-            if (_search_stop)
-                return 0;
-
-            if (score > alpha)
-            {
-                alpha = score;
-                _pv[pvHeight] = actions[i];
-            }
-        }
-
-        if (score > result)
-        {
-            if (score >= beta)
-            {
-                ++_cutoffs;
-                _ttable.set(board.getHash(), score, depth, alpha, beta);
-                return score;
-            }
-            result = score;
-        }
-    }
-
-    _ttable.set(board.getHash(), result, depth, alpha, beta);
     return result;
 }
 
@@ -428,8 +302,6 @@ void Engine::startSearch()
     if (_searcher == nullptr)
     {
         std::unique_lock<std::mutex> lock(_awaitSearcherMutex);
-        for (Move& m: _pv)
-            m = Move(0);
         _search_stop = false;
         _search_running = false;
         _searcher = std::make_shared<std::thread>(&Engine::search, this);
