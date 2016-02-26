@@ -33,12 +33,6 @@ public:
     Move getMove();
 
 private:
-    int PVS(Board& board,
-            const unsigned int depth,
-            int alpha=-CHECKMATE,
-            int beta=CHECKMATE,
-            size_t pvHeight=1);
-
     int negamax(const unsigned int depth,
                 int alpha=-CHECKMATE,
                 int beta=CHECKMATE,
@@ -57,7 +51,6 @@ private:
     float _time;
 
     static const int HEIGHTMAX = 16;
-    std::array<Move, HEIGHTMAX> _pv; // Principal Variation
 
     std::shared_ptr<std::thread> _searcher;
     std::atomic_bool _search_stop;
