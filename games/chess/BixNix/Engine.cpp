@@ -113,6 +113,9 @@ Move Engine::getMove()
 
 void Engine::search()
 {
+    _search_running = true;
+    _searcher_starting.notify_all();
+
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
     if (actions.size() == 0)
         return;
@@ -164,6 +167,7 @@ void Engine::search()
 
         ++depth;
     }
+    _search_running = false;
 }
 
 int Engine::negamax(const unsigned int depth,
@@ -410,7 +414,8 @@ Engine::Engine():
     _searcher(nullptr),
     _best_move(Move()),
     _node_expansions(0),
-    _cutoffs(0)
+    _cutoffs(0),
+    _search_running(false)
 {
     _ttable.resize(TTSIZE);
 }
@@ -426,10 +431,13 @@ void Engine::startSearch()
 {
     if (_searcher == nullptr)
     {
+        std::unique_lock<std::mutex> lock(_awaitSearcherMutex);
         for (Move& m: _pv)
             m = Move(0);
         _search_stop = false;
+        _search_running = false;
         _searcher = std::make_shared<std::thread>(&Engine::search, this);
+        _searcher_starting.wait(lock, [&] { return (bool)_search_running; });
     }
 }
 
