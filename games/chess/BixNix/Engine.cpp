@@ -149,17 +149,21 @@ void Engine::search()
                   [&](const Move& a, const Move& b) -> bool
                   { return a.score > b.score; });
 
-        _best_move = actions[0];
-        _best_move_ready.notify_all();
-
+        std::vector<Move> options;
         std::stringstream ss;
         ss << depth << " ";
         for (Move& m : actions)
         {
-            if (m.score + 15 > actions[0].score)
+            if (m.score + 10 > actions[0].score)
+            {
                 ss << "(" << m.score << ")" << m << " ";
+                options.push_back(m);
+            }
         }
         LOG(trace) << ss.str();
+
+        _best_move = options[rand() % options.size()];
+        _best_move_ready.notify_all();
 
         ++depth;
     }
@@ -323,6 +327,7 @@ void Engine::stopSearch()
 
 void Engine::init(Color color, float time)
 {
+    srand(std::time(NULL));
     _color = color;
     _time = time;
 
