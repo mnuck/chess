@@ -36,34 +36,34 @@ class Chess::Player : public Chess::GameObject, public Joueur::BasePlayer
         std::string color;
 
         /// <summary>
-        /// The direction your checkers must go along the file (y) axis until they reach the other side.
-        /// </summary>
-        int fileDirection;
-
-        /// <summary>
-        /// true if this player is currently in check, and must move out of check.
+        /// True if this player is currently in check, and must move out of check, false otherwise.
         /// </summary>
         bool inCheck;
 
         /// <summary>
-        /// If the Player has made their move for the turn. true means they can no longer move a piece this turn.
+        /// If the Player has made their move for the turn. true means they can no longer move a Piece this turn.
         /// </summary>
         bool madeMove;
 
         /// <summary>
-        /// The name of the player
+        /// The name of the player.
         /// </summary>
         std::string name;
 
         /// <summary>
-        /// this player's opponent in the game.
+        /// This player's opponent in the game.
         /// </summary>
         Chess::Player* otherPlayer;
 
         /// <summary>
-        /// All the unpcaptured chess pieces owned by this player.
+        /// All the unpcaptured chess Pieces owned by this player.
         /// </summary>
         std::vector<Chess::Piece*> pieces;
+
+        /// <summary>
+        /// The direction your Pieces must go along the rank axis until they reach the other side.
+        /// </summary>
+        int rankDirection;
 
         /// <summary>
         /// The amount of time (in ns) remaining for this AI to send commands.

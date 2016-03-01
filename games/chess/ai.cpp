@@ -61,8 +61,8 @@ bool Chess::AI::runTurn()
 
 BixNix::Move Chess::AI::siggame2bixnix(Chess::Move* m)
 {
-    const int sourceIndex = 8 * m->fromFile - (1 + (m->fromRank)[0] - 'a');
-    const int targetIndex = 8 * m->toFile - (1 + (m->toRank)[0]   - 'a');
+    const int sourceIndex = 8 * m->fromRank - (1 + (m->fromFile)[0] - 'a');
+    const int targetIndex = 8 * m->toRank - (1 + (m->toFile)[0]   - 'a');
 
     BixNix::Piece promoteType;
     if (m->promotion == "Knight")
@@ -87,11 +87,11 @@ BixNix::Move Chess::AI::siggame2bixnix(Chess::Move* m)
 
 void Chess::AI::sendBixNixMove(const BixNix::Move& m)
 {
-    const int sourceFile = 1 + (m.getSource() / 8);
-    const int targetFile = 1 + (m.getTarget() / 8);
+    const int sourceRank = 1 + (m.getSource() / 8);
+    const int targetRank = 1 + (m.getTarget() / 8);
 
-    const std::string sourceRank(1, 'a' + (7 - (m.getSource() % 8)));
-    const std::string targetRank(1, 'a' + (7 - (m.getTarget() % 8)));
+    const std::string sourceFile(1, 'a' + (7 - (m.getSource() % 8)));
+    const std::string targetFile(1, 'a' + (7 - (m.getTarget() % 8)));
 
     for (auto* p : game->pieces)
     {
@@ -116,11 +116,11 @@ void Chess::AI::sendBixNixMove(const BixNix::Move& m)
                     promoteType = "Queen";
                     break;
                 }
-                p->move(targetRank, targetFile, promoteType);
+                p->move(targetFile, targetRank, promoteType);
             }
             else
             {
-                p->move(targetRank, targetFile);
+                p->move(targetFile, targetRank);
             }
             break;
         }
