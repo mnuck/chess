@@ -12,7 +12,7 @@ public:
     static Evaluate& GetInstance();
     virtual ~Evaluate() {}
     int getEvaluation(Board& board, const Color color);
-    const std::array<int, 6>& getMaterial() { return _material; }
+    int getEvaluation(const Move& move, const Color color);
 
 protected:
     Evaluate();
