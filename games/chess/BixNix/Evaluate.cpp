@@ -24,6 +24,35 @@ int Evaluate::getEvaluation(Board& board, const Color color)
 }
 
 
+int Evaluate::getEvaluation(const Move& move, const Color color)
+{
+    int result = 0;
+        if (move.getCastling())
+            result += 1000;
+        if (move.getEnPassanting())
+            result += 1000;
+        if (move.getPromoting())
+        {
+            result -= _material[Pawn];
+            result += _material[move.getPromotionPiece()];
+            result += 1000;
+        }
+        if (move.getCapturing())
+        {
+            result += 1000;
+            int attackerCost = _material[move.getMovingPiece()];
+            int defenderCost = _material[move.getCapturedPiece()];
+            result += (defenderCost - attackerCost);
+        }
+
+        BitBoard start(1LL << move.getSource());
+        BitBoard end(1LL << move.getTarget());
+
+        result -= _pieceSquare[color][move.getMovingPiece()][63 - move.getSource()];
+        result += _pieceSquare[color][move.getMovingPiece()][63 - move.getTarget()];        
+}
+
+
 int Evaluate::materialEval(const Board& board)
 {
     int result = 0;
