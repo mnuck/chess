@@ -113,9 +113,17 @@ Move Engine::getMove()
 
 void Engine::search()
 {
-    _search_running = true;
-    _searcher_starting.notify_all();
+    while (!_search_end)
+    {
+        _searcherStarted.wait();
+        innerSearch();
+        _searcherStopped.wait();
+    }
+}
 
+
+void Engine::innerSearch()
+{
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
     if (actions.size() == 0)
         return;
@@ -130,7 +138,6 @@ void Engine::search()
 
         for (Move& m : actions)
         {
-            _searcher_starting.notify_all(); // second chance
             _board.applyMove(m);
             if (_3table.addWouldTrigger(_board.getHash()))
             {
@@ -167,7 +174,6 @@ void Engine::search()
 
         ++depth;
     }
-    _search_running = false;
 }
 
 int Engine::negamax(const unsigned int depth,
@@ -289,38 +295,39 @@ Engine::Engine():
     _best_move(Move()),
     _node_expansions(0),
     _cutoffs(0),
-    _search_running(false)
+    _search_stop(true),
+    _search_end(false)
 {
     _ttable.resize(TTSIZE);
+    _searcher = new std::thread(&Engine::search, this);
 }
 
 
 Engine::~Engine()
 {
+    _search_end = true;
     stopSearch();
+    _searcher->join();
+    _searcher = nullptr;
 }
 
 
 void Engine::startSearch()
 {
-    if (_searcher == nullptr)
+    if (true == _search_stop)
     {
-        std::unique_lock<std::mutex> lock(_awaitSearcherMutex);
         _search_stop = false;
-        _search_running = false;
-        _searcher = std::make_shared<std::thread>(&Engine::search, this);
-        _searcher_starting.wait(lock, [&] { return (bool)_search_running; });
+        _searcherStarted.wait();
     }
 }
 
 
 void Engine::stopSearch()
 {
-    _search_stop = true;
-    if (_searcher)
+    if (false == _search_stop)
     {
-        _searcher->join();
-        _searcher = nullptr;
+        _search_stop = true;
+        _searcherStopped.wait();
     }
 }
 
@@ -333,7 +340,6 @@ void Engine::init(Color color, float time)
 
     _start_time = std::chrono::system_clock::now();
 
-    stopSearch();
     _board = Board::initial();
     startSearch();
 }
