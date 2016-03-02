@@ -12,6 +12,8 @@
 #include <memory>
 #include <thread>
 
+#include "Rendezvous.h"
+
 #include "Enums.h"
 #include "Board.h"
 #include "TranspositionTable.h"
@@ -45,6 +47,7 @@ private:
     void startSearch();
     void stopSearch();
     void search();
+    void innerSearch();
 
     Board _board;
     Color _color;
@@ -52,18 +55,16 @@ private:
 
     static const int HEIGHTMAX = 16;
 
-    std::shared_ptr<std::thread> _searcher;
+    std::thread* _searcher;
     std::atomic_bool _search_stop;
-    std::atomic_bool _search_running;
-
-    Move _best_move;
+    std::atomic_bool _search_end;
     std::condition_variable _best_move_ready;
-    std::condition_variable _searcher_starting;
-    
-
     std::mutex _cvMutex;
-    std::mutex _awaitSearcherMutex;
-    
+
+    Rendezvous _searcherStarted;
+    Rendezvous _searcherStopped;
+
+    Move _best_move;    
 
     unsigned long long _node_expansions;
     unsigned long long _cutoffs;
