@@ -7,7 +7,9 @@
 
 std::string Chess::AI::getName()
 {
-    return "LexMaxBixNix";
+    std::string date(__DATE__);
+    std::string time(__TIME__);
+    return "LexMaxBixNix " + date + " " + time;
 }
 
 void Chess::AI::start()
@@ -31,7 +33,7 @@ void Chess::AI::ended(bool won, std::string reason)
     if (getenv("REPORT"))
     {
         int fd = open("results.log", O_APPEND | O_WRONLY);
-        std::string message = "";
+        std::string message = getName() + ",";
         if (won)
             message += "Win,";
         else
