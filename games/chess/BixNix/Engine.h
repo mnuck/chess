@@ -35,14 +35,9 @@ public:
     Move getMove();
 
 private:
-    int negamax(const unsigned int depth,
+    int negamax(const int depth,
                 int alpha=-CHECKMATE,
-                int beta=CHECKMATE,
-                size_t pvHeight=1);
-
-    int quiescent(Board& board,
-                  int alpha,
-                  int beta);
+                int beta=CHECKMATE);
 
     void startSearch();
     void stopSearch();

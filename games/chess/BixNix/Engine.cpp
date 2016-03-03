@@ -176,10 +176,9 @@ void Engine::innerSearch()
     }
 }
 
-int Engine::negamax(const unsigned int depth,
+int Engine::negamax(const int depth,
                     int alpha,
-                    int beta,
-                    size_t pvHeight)
+                    int beta)
 {
     ++_node_expansions;
     if (_search_stop)
@@ -213,6 +212,7 @@ int Engine::negamax(const unsigned int depth,
                     _cutoffs += left;
                     break;
                 }
+
                 --left;
                 _board.applyMove(m);
                 if (_3table.addWouldTrigger(_board.getHash()))
@@ -220,8 +220,8 @@ int Engine::negamax(const unsigned int depth,
                     m.score = (- CHECKMATE) + 1;
                 } else {
                     _3table.add(_board.getHash());
-                    m.score = - negamax(depth - 1, -beta, -alpha, pvHeight + 1);
-                    _3table.remove(_board.getHash());                    
+                    m.score = - negamax(depth - 1, -beta, -alpha);
+                    _3table.remove(_board.getHash());
                 }
                 _board.unapplyMove(m);
                 if (_search_stop)
@@ -239,56 +239,6 @@ int Engine::negamax(const unsigned int depth,
     _ttable.set(_board.getHash(), result, depth, alpha, beta);
     return result;
 }
-
-
-int Engine::quiescent(Board& board,
-                      int alpha,
-                      int beta)
-{
-    ++_node_expansions;
-    if (_search_stop)
-        return 0;
-
-    int result;
-    if (_ttable.get(board.getHash(), 0, alpha, beta, result))
-        return result;
-
-    std::vector<Move> actions(board.getMoves(board.getMover()));
-    if (actions.size() == 0)
-    {
-        if (!board.inCheckmate(board.getMover()))
-        {
-            return 0;
-        }
-    }
-
-    bool didSomething = false;
-    for (Move& m: actions)
-    {
-        if (!m.getCapturing())
-            continue;
-
-        didSomething = true;
-        Board brd(board);
-        brd.applyMove(m);
-
-        //Board brd(board.applyMove(m));
-        m.score = - quiescent(brd, -beta, -alpha);
-        if (_search_stop)
-            return 0;
-
-        alpha = std::max(alpha, m.score);
-        if (m.score >= beta)
-            return beta;
-
-    }
-    if (!didSomething)
-        alpha = Evaluate::GetInstance().getEvaluation(std::ref(board), board.getMover());
-
-    _ttable.set(board.getHash(), alpha, 0, alpha, beta);
-    return alpha;
-}
-
 
 Engine::Engine():
     _searcher(nullptr),
