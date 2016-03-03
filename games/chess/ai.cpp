@@ -9,7 +9,10 @@ std::string Chess::AI::getName()
 {
     std::string date(__DATE__);
     std::string time(__TIME__);
-    return "LexMaxBixNix " + date + " " + time;
+    if (getenv("DT_NAME"))
+        return "LexMaxBixNix " + date + " " + time;
+    else
+        return "LexMaxBixNix";
 }
 
 void Chess::AI::start()
