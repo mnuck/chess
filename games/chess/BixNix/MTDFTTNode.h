@@ -6,27 +6,23 @@
 #include "Enums.h"
 #include "Move.h"
 
-namespace BixNix
-{
+namespace BixNix {
 
-class MTDFTTNode
-{
-public:
-    MTDFTTNode() :
-        _hash(0xFFFFFFFFFFFFFFFFLL),
+class MTDFTTNode {
+ public:
+  MTDFTTNode()
+      : _hash(0xFFFFFFFFFFFFFFFFLL),
         _lower(INT_MIN),
         _upper(INT_MAX),
         _depth(0),
         _move(Move()) {}
 
-    ZobristNumber _hash;
-    int _lower;
-    int _upper;
-    unsigned int _depth;
-    Move _move;
+  ZobristNumber _hash;
+  int _lower;
+  int _upper;
+  unsigned int _depth;
+  Move _move;
 };
-
-
 }
 
-#endif // _TRANSPOSITION_NODE_H_
+#endif  // _TRANSPOSITION_NODE_H_

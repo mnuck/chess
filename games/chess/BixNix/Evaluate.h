@@ -3,27 +3,24 @@
 
 #include "Board.h"
 
-namespace BixNix
-{
+namespace BixNix {
 
-class Evaluate
-{
-public:
-    static Evaluate& GetInstance();
-    virtual ~Evaluate() {}
-    int getEvaluation(Board& board, const Color color);
-    int getEvaluation(const Move& move, const Color color);
+class Evaluate {
+ public:
+  static Evaluate& GetInstance();
+  virtual ~Evaluate() {}
+  int getEvaluation(Board& board, const Color color);
+  int getEvaluation(const Move& move, const Color color);
 
-protected:
-    Evaluate();
+ protected:
+  Evaluate();
 
-    int materialEval(const Board& board);
-    int pieceSquareEval(const Board& board);
+  int materialEval(const Board& board);
+  int pieceSquareEval(const Board& board);
 
-    std::array<std::array<std::array<int, 64>, 6>, 2> _pieceSquare;
-    std::array<int, 6> _material;
+  std::array<std::array<std::array<int, 64>, 6>, 2> _pieceSquare;
+  std::array<int, 6> _material;
 };
-
 }
 
-#endif // _EVALUATE_H_
+#endif  // _EVALUATE_H_
