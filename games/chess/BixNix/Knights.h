@@ -4,25 +4,20 @@
 #include <array>
 #include "Board.h"
 
-namespace BixNix
-{
+namespace BixNix {
 
-class Knights
-{
-public:
-    static Knights& GetInstance();
-    virtual ~Knights();
-    BitBoard getAttacksFrom(Square index);
-    BitBoard getAttacksFrom(BitBoard knights,
-                            BitBoard obstructions);
+class Knights {
+ public:
+  static Knights& GetInstance();
+  virtual ~Knights();
+  BitBoard getAttacksFrom(Square index);
+  BitBoard getAttacksFrom(BitBoard knights, BitBoard obstructions);
 
-protected:
-    Knights();
-    BitBoard generateAttacksFrom(Square index);
-    std::array<BitBoard, 64> _attacks;
+ protected:
+  Knights();
+  BitBoard generateAttacksFrom(Square index);
+  std::array<BitBoard, 64> _attacks;
 };
-
 }
 
-
-#endif // _KNIGHTS_H_
+#endif  // _KNIGHTS_H_

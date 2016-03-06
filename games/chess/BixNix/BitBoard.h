@@ -6,19 +6,18 @@
 
 #include "Enums.h"
 
-namespace BixNix
-{
+namespace BixNix {
 
 std::string RenderBB(BitBoard bb);
 
 std::string RenderBB(BitBoard bb);
 
-const BitBoard notAFile  = 0x7F7F7F7F7F7F7F7F;
+const BitBoard notAFile = 0x7F7F7F7F7F7F7F7F;
 const BitBoard notABFile = 0x3F3F3F3F3F3F3F3F;
-const BitBoard notHFile  = 0xFEFEFEFEFEFEFEFE;
+const BitBoard notHFile = 0xFEFEFEFEFEFEFEFE;
 const BitBoard notGHFile = 0xFCFCFCFCFCFCFCFC;
 
-// Kogge-Stone routines from 
+// Kogge-Stone routines from
 // https://chessprogramming.wikispaces.com/Kogge-Stone+Algorithm
 
 BitBoard smearN(BitBoard generator, BitBoard clear);
@@ -38,7 +37,6 @@ BitBoard shiftS(BitBoard source);
 BitBoard shiftSW(BitBoard source);
 BitBoard shiftW(BitBoard source);
 BitBoard shiftNW(BitBoard source);
-
 }
 
-#endif // __BITBOARD_H__
+#endif  // __BITBOARD_H__
