@@ -97,7 +97,7 @@ Move Engine::getMove() {
   _board.applyMove(move);
   _3table.add(_board.getHash());
 
-  LOG(trace) << "sending (" << move.score << ") " << move;
+  LOG(trace) << "engine sending (" << move.score << ") " << move;
   LOG(trace) << "board\n" << _board;
 
   startSearch();  // start pondering
@@ -250,7 +250,6 @@ void Engine::init(Color color, float time) {
 }
 
 void Engine::reportMove(Move move, float time) {
-  LOG(trace) << "receiving " << move;
   _time = time;
 
   stopSearch();

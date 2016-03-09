@@ -65,6 +65,7 @@ BixNix::Move Book::getMove() {
 
   // fitness proportional move selection
   Book::Move winner;
+  uint32_t winnerWeight;
   uint32_t totalWeight = 0;
   for (auto it = range.first; it != range.second; ++it) {
     totalWeight += std::get<1>(it->second);
@@ -75,9 +76,12 @@ BixNix::Move Book::getMove() {
     acc += std::get<1>(it->second);
     if (choicePoint <= acc) {
       winner = std::get<0>(it->second);
+      winnerWeight = std::get<1>(it->second);
       break;
     }
   }
+
+  uint32_t percentWeight = (winnerWeight * 100) / totalWeight;
 
   auto toFile = winner & 0x07;
   auto toRank = (winner >> 3) & 0x07;
@@ -116,7 +120,7 @@ BixNix::Move Book::getMove() {
     target = 61;  // black long side castle
 
   result = BixNix::Move(source, target, piece);
-  LOG(trace) << "Book move: " << result;
+  LOG(trace) << "book sending (" << percentWeight << "%) " << result;
   _board.applyExternalMove(result);
   return result;
 }

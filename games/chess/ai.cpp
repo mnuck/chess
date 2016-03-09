@@ -4,6 +4,7 @@
 
 #include "BixNix/Book.h"
 #include "BixNix/Engine.h"
+#include "BixNix/Logger.h"
 
 std::string Chess::AI::getName() {
   std::string date(__DATE__);
@@ -59,6 +60,7 @@ void Chess::AI::ended(bool won, std::string reason) {
 bool Chess::AI::runTurn() {
   if (game->moves.size() > 0) {
     BixNix::Move move = siggame2bixnix(game->moves[game->currentTurn - 1]);
+    LOG(trace) << "receiving " << move;
 
     _book.reportMove(move);
     _engine.reportMove(move, player->timeRemaining / 1000000000);
