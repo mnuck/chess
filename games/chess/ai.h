@@ -12,6 +12,7 @@
 
 #include "../../joueur/baseAI.h"
 
+#include "BixNix/Book.h"
 #include "BixNix/Engine.h"
 
 /// <summary>
@@ -81,6 +82,11 @@ class Chess::AI : public Joueur::BaseAI {
   /// The BixNix engine
   /// </summary>
   BixNix::Engine _engine;
+
+  /// <summary>
+  /// The BixNix book
+  /// </summary>
+  BixNix::Book _book;
 };
 
 #endif

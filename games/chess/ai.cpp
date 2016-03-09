@@ -2,6 +2,7 @@
 
 #include "ai.h"
 
+#include "BixNix/Book.h"
 #include "BixNix/Engine.h"
 
 std::string Chess::AI::getName() {
@@ -24,6 +25,12 @@ void Chess::AI::start() {
   float myTime = player->timeRemaining / 1000000000;
 
   _engine.init(myColor, myTime);
+
+  char* bookFilename;
+  if (bookFilename = getenv("BOOK"))
+    _book.init(std::string(bookFilename));
+  else
+    _book.init("book.bin");
 }
 
 void Chess::AI::gameUpdated() {}
@@ -50,10 +57,20 @@ void Chess::AI::ended(bool won, std::string reason) {
 }
 
 bool Chess::AI::runTurn() {
-  if (game->moves.size() > 0)
-    _engine.reportMove(siggame2bixnix(game->moves[game->currentTurn - 1]),
-                       player->timeRemaining / 1000000000);
-  sendBixNixMove(_engine.getMove());
+  if (game->moves.size() > 0) {
+    BixNix::Move move = siggame2bixnix(game->moves[game->currentTurn - 1]);
+
+    _book.reportMove(move);
+    _engine.reportMove(move, player->timeRemaining / 1000000000);
+  }
+
+  BixNix::Move response = _book.getMove();
+  if (BixNix::Move(0) == response)
+    response = _engine.getMove();
+  else
+    _engine.reportMove(response, player->timeRemaining / 1000000000);
+
+  sendBixNixMove(response);
   return true;
 }
 

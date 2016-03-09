@@ -21,6 +21,7 @@ class Board {
  public:
   friend std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
   friend class Evaluate;
+  friend ZobristNumber toKey(const Board& board);
 
   Board();
   Board(const Board& that);
@@ -47,6 +48,9 @@ class Board {
   bool isDraw100();
   bool inCheck(const Color color) const;
   bool inCheckmate(const Color color);
+  bool WKingMoved() const { return _dirty & (1L << 3); }
+  bool BKingMoved() const { return _dirty & (1L << 59); }
+
   void applyMove(const Move move);
   void unapplyMove(const Move move);
 
@@ -72,8 +76,6 @@ class Board {
 
   static bool parse(const char square, Color& color, Piece& piece);
 
-  bool WKingMoved() const { return _dirty & (1L << 3); }
-  bool BKingMoved() const { return _dirty & (1L << 59); }
   bool WKRookMoved() const { return _dirty & (1L << 0); }
   bool WQRookMoved() const { return _dirty & (1L << 7); }
   bool BKRookMoved() const { return _dirty & (1L << 56); }

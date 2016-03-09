@@ -257,5 +257,6 @@ void Engine::reportMove(Move move, float time) {
   _board.applyExternalMove(move);
   _3table.add(_board.getHash());
   LOG(trace) << "board\n" << _board;
+  startSearch();
 }
 }
