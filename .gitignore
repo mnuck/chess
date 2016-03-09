@@ -250,3 +250,6 @@ _Pvt_Extensions
 
 # generated docs
 docs/output
+
+# emacs config stuff
+.dir-locals.el
