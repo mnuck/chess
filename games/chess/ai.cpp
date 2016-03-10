@@ -60,7 +60,8 @@ void Chess::AI::ended(bool won, std::string reason) {
 bool Chess::AI::runTurn() {
   if (game->moves.size() > 0) {
     BixNix::Move move = siggame2bixnix(game->moves[game->currentTurn - 1]);
-    LOG(trace) << "receiving " << move;
+    LOG(trace) << "receiving " << move << " "
+               << player->timeRemaining / 1000000000 << "s remaining";
 
     _book.reportMove(move);
     _engine.reportMove(move, player->timeRemaining / 1000000000);
