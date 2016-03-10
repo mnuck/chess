@@ -825,7 +825,7 @@ std::vector<Move> Board::getMoves(const Color color,
     m.score = Evaluate::GetInstance().getEvaluation(m, _toMove);
   }
 
-  std::make_heap(
+  std::sort(
       result.begin(), result.end(),
       [&](const Move& a, const Move& b) -> bool { return a.score < b.score; });
 
