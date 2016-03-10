@@ -64,6 +64,18 @@ class Engine {
   static const int TTSIZE = 33554432;
   TranspositionTable _ttable;
   ThreefoldTable _3table;
+
+  void collectStats();
+  std::vector<float> _timePassed;
+  std::vector<float> _timeLeft;
+  std::vector<uint64_t> _expansions;
+  std::vector<uint64_t> _cutoffSeries;
+
+  std::vector<size_t> _ttSize;
+  std::vector<size_t> _ttOccupancy;
+  std::vector<uint64_t> _ttMisses;
+  std::vector<uint64_t> _ttHits;
+  std::vector<uint64_t> _ttCollisions;
 };
 }
 
