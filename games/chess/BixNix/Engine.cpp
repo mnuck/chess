@@ -199,7 +199,7 @@ int Engine::negamax(const int depth, int alpha, int beta) {
 
     if ((actions.size() == 0 && !_board.inCheckmate(_board.getMover())) ||
         (_board.isDraw100())) {
-      result = 0;  // stalemate
+      result = -CHECKMATE + 1;  // stalemate
     } else {
       int left = actions.size();
       for (Move& m : actions) {
