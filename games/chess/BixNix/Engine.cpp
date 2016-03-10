@@ -185,12 +185,12 @@ void Engine::innerSearch() {
 }
 
 int Engine::negamax(const int depth, int alpha, int beta) {
-  ++_node_expansions;
   if (_search_stop) return 0;
 
   int result(-CHECKMATE);
 
   if (_ttable.get(_board.getHash(), depth, alpha, beta, result)) return result;
+  ++_node_expansions;
 
   if (0 == depth) {
     result = Evaluate::GetInstance().getEvaluation(_board, _board.getMover());
