@@ -13,9 +13,9 @@ dependencies:
 ifeq (,$(wildcard ./build/CMakeCache.txt))
 	@mkdir build || true
 ifeq ("$(BOOST_ROOT)","")
-	  @cd build && cmake .. -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBoost_USE_STATIC_LIBS=$(USE_STATIC_LIBS) $(CMAKE_EXTRAS)
+	  @cd build && cmake .. -DCMAKE_BUILD_TYPE:STRING=Release -DBoost_USE_STATIC_LIBS=$(USE_STATIC_LIBS) $(CMAKE_EXTRAS)
 else
-	  @cd build && cmake .. -DCMAKE_BUILD_TYPE:STRING=RelWithDebInfo -DBoost_USE_STATIC_LIBS=$(USE_STATIC_LIBS) -DBOOST_ROOT:PATH=$(BOOST_ROOT) $(CMAKE_EXTRAS)
+	  @cd build && cmake .. -DCMAKE_BUILD_TYPE:STRING=Release -DBoost_USE_STATIC_LIBS=$(USE_STATIC_LIBS) -DBOOST_ROOT:PATH=$(BOOST_ROOT) $(CMAKE_EXTRAS)
 endif
 endif
 
