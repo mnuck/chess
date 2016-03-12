@@ -153,7 +153,7 @@ void Engine::innerSearch() {
     for (Move& m : actions) {
       _board.applyMove(m);
       if (_3table.addWouldTrigger(_board.getHash())) {
-        m.score = (-CHECKMATE) + 1;
+        m.score = DRAW;
       } else {
         _3table.add(_board.getHash());
         m.score = -negamax(depth);
@@ -200,7 +200,7 @@ int Engine::negamax(const int depth, int alpha, int beta) {
 
     if ((actions.size() == 0 && !_board.inCheckmate(_board.getMover())) ||
         (_board.isDraw100())) {
-      result = -CHECKMATE + 1;  // stalemate
+      result = DRAW;  // stalemate
     } else {
       int left = actions.size();
       for (Move& m : actions) {
@@ -212,7 +212,7 @@ int Engine::negamax(const int depth, int alpha, int beta) {
         --left;
         _board.applyMove(m);
         if (_3table.addWouldTrigger(_board.getHash())) {
-          m.score = (-CHECKMATE) + 1;
+          m.score = DRAW;
         } else {
           _3table.add(_board.getHash());
           m.score = -negamax(depth - 1, -beta, -alpha);
