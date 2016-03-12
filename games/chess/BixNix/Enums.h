@@ -6,6 +6,7 @@
 namespace BixNix {
 
 const int CHECKMATE = 100000;
+const int DRAW = -99999;
 
 typedef uint64_t BitBoard;
 typedef uint64_t ZobristNumber;
