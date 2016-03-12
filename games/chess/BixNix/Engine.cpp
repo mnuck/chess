@@ -144,6 +144,7 @@ void Engine::innerSearch() {
   if (actions.size() == 0) return;
 
   _best_move = actions[0];
+  _best_move_ready.notify_all();
 
   unsigned int depth = 0;
   while (!_search_stop) {
