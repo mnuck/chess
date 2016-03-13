@@ -5,6 +5,7 @@
 #ifndef __ENGINE_H__
 #define __ENGINE_H__
 
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <climits>
@@ -33,7 +34,8 @@ class Engine {
   Move getMove();
 
  private:
-  int negamax(const int depth, int alpha = -CHECKMATE, int beta = CHECKMATE);
+  int negamax(const int depth, int alpha = -CHECKMATE, int beta = CHECKMATE,
+              const int height = 1);
 
   void startSearch();
   void stopSearch();
@@ -64,6 +66,9 @@ class Engine {
   static const int TTSIZE = 33554432;
   TranspositionTable _ttable;
   ThreefoldTable _3table;
+
+  std::array<Move, 16> _pv;
+  void dumpPV();
 
   void collectStats();
   std::vector<float> _timePassed;

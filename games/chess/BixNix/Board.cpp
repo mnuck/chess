@@ -872,6 +872,8 @@ uint64_t Board::perft(const int depth) {
   return result;
 }
 
+Move Board::getPastMove(int i) { return _moves.deepTop(i); }
+
 Board Board::parseEPD(std::istream& in) {
   Board result;
   std::string piecePlacement;
