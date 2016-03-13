@@ -139,6 +139,16 @@ void Engine::search() {
   }
 }
 
+void Engine::dumpPV() {
+  std::stringstream message;
+  message << "PV: ";
+  for (Move& m : _pv) {
+    if (Move(0) == m) break;
+    message << m << " ";
+  }
+  LOG(trace) << message.str();
+}
+
 void Engine::innerSearch() {
   std::vector<Move> actions(_board.getMoves(_board.getMover()));
   if (actions.size() == 0) return;
@@ -147,9 +157,11 @@ void Engine::innerSearch() {
   _best_move_ready.notify_all();
 
   unsigned int depth = 0;
-  while (!_search_stop) {
-    if (depth > HEIGHTMAX) return;
+  for (Move& m : _pv) m = Move(0);
 
+  while (!_search_stop) {
+    int bestScore = -CHECKMATE;
+    if (depth > HEIGHTMAX) return;
     for (Move& m : actions) {
       _board.applyMove(m);
       if (_3table.addWouldTrigger(_board.getHash())) {
@@ -161,31 +173,21 @@ void Engine::innerSearch() {
       }
       _board.unapplyMove(m);
       if (_search_stop) return;
-    }
-
-    std::sort(actions.begin(), actions.end(),
-              [&](const Move& a, const Move& b)
-                  -> bool { return a.score > b.score; });
-
-    std::vector<Move> options;
-    std::stringstream ss;
-    ss << depth << " ";
-    for (Move& m : actions) {
-      if (m.score + 10 > actions[0].score) {
-        ss << "(" << m.score << ")" << m << " ";
-        options.push_back(m);
+      if (m.score > bestScore) {
+        bestScore = m.score;
+        _pv[0] = m;
+        _best_move = m;
+        dumpPV();
       }
     }
-    LOG(trace) << ss.str();
 
-    _best_move = options[rand() % options.size()];
     _best_move_ready.notify_all();
 
     ++depth;
   }
 }
 
-int Engine::negamax(const int depth, int alpha, int beta) {
+int Engine::negamax(const int depth, int alpha, int beta, const int height) {
   if (_search_stop) return 0;
 
   int result(-CHECKMATE);
@@ -224,6 +226,8 @@ int Engine::negamax(const int depth, int alpha, int beta) {
         result = std::max(result, m.score);
         if (result > alpha) {
           alpha = result;
+          for (int i = 0; i <= height; ++i)
+            _pv[height - i] = _board.getPastMove(i);
         }
       }
     }

@@ -54,6 +54,8 @@ class Board {
   void applyMove(const Move move);
   void unapplyMove(const Move move);
 
+  Move getPastMove(int i);
+
  private:
   BitBoard getUnsafe(Color color) const;
   bool isUnsafe(Square square, Color color) const;

@@ -21,6 +21,7 @@ class BNStack {
   void push(const T& data) { _data[_head_index++] = data; }
   void pop() { --_head_index; }
   const T& top() { return _data[_head_index - 1]; }
+  const T& deepTop(int i) { return _data[_head_index - 1 - i]; }
   size_t size() { return _head_index; }
   void clear() { _head_index = 0; }
 
