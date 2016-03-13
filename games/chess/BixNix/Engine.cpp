@@ -199,6 +199,12 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
     result = Evaluate::GetInstance().getEvaluation(_board, _board.getMover());
   } else {
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
+    for (int i = 1; i < actions.size(); ++i) {
+      if (_pv[height] == actions[i]) {
+        std::swap(actions[0], actions[i]);
+        break;
+      }
+    }
 
     if ((actions.size() == 0 && !_board.inCheckmate(_board.getMover())) ||
         (_board.isDraw100())) {
