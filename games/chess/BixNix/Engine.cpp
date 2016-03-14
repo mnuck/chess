@@ -241,14 +241,12 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
         --left;
         Color myColor = _board.getMover();
         _board.applyMove(m);
-        if (!_board.inCheck(myColor)) {
-          if (_3table.addWouldTrigger(_board.getHash())) {
-            m.score = DRAW;
-          } else {
-            _3table.add(_board.getHash());
-            m.score = -negamax(depth - 1, -beta, -alpha, height + 1);
-            _3table.remove(_board.getHash());
-          }
+        if (_3table.addWouldTrigger(_board.getHash())) {
+          m.score = DRAW;
+        } else {
+          _3table.add(_board.getHash());
+          m.score = -negamax(depth - 1, -beta, -alpha, height + 1);
+          _3table.remove(_board.getHash());
         }
         _board.unapplyMove(m);
         if (_search_stop) return 0;

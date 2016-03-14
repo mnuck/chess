@@ -810,16 +810,15 @@ std::vector<Move> Board::getMoves(const Color color,
   result.insert(result.end(), pawnsAttk.begin(), pawnsAttk.end());
   result.insert(result.end(), pawnsEP.begin(), pawnsEP.end());
 
-  if (!checkCheckmate) {
-    result.erase(std::remove_if(result.begin(), result.end(),
-                                [this, color](Move& move) -> bool {
-                   applyMove(move);
-                   bool bad = inCheck(color);
-                   unapplyMove(move);
-                   return bad;
-                 }),
-                 result.end());
-  }
+  result.erase(std::remove_if(result.begin(), result.end(),
+                              [this, color](Move& move) -> bool {
+                 applyMove(move);
+                 bool bad = inCheck(color);
+                 unapplyMove(move);
+                 return bad;
+               }),
+               result.end());
+
   if (result.size() == 0) _terminalState = Draw;
 
   for (auto& m : result) {
