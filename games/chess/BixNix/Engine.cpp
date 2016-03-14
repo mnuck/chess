@@ -139,27 +139,9 @@ void Engine::search() {
   }
 }
 
-void Engine::dumpPV() {
-  std::stringstream message;
-  message << "PV: ";
-  for (Move& m : _pv) {
-    if (Move(0) == m) break;
-    message << m << " ";
-  }
-  LOG(trace) << message.str();
-}
-
 void Engine::innerSearch() {
   Color myColor = _board.getMover();
   std::vector<Move> actions = _board.getMoves(myColor);
-  actions.erase(
-      std::remove_if(actions.begin(), actions.end(), [&](Move& move) -> bool {
-        _board.applyMove(move);
-        bool bad = _board.inCheck(myColor);
-        _board.unapplyMove(move);
-        return bad;
-      }),
-      actions.end());
   if (actions.size() == 0) return;
 
   _best_move = actions[0];
