@@ -177,7 +177,11 @@ void Engine::innerSearch() {
           message << m << " ";
         }
         LOG(trace) << message.str();
-        if (CHECKMATE == bestScore) return;
+        if (CHECKMATE == bestScore) {
+          _best_move = bestMoveThisDepth;
+          _best_move_ready.notify_all();
+          return;
+        }
       }
     }
 
