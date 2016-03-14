@@ -150,7 +150,16 @@ void Engine::dumpPV() {
 }
 
 void Engine::innerSearch() {
-  std::vector<Move> actions(_board.getMoves(_board.getMover()));
+  Color myColor = _board.getMover();
+  std::vector<Move> actions = _board.getMoves(myColor);
+  actions.erase(
+      std::remove_if(actions.begin(), actions.end(), [&](Move& move) -> bool {
+        _board.applyMove(move);
+        bool bad = _board.inCheck(myColor);
+        _board.unapplyMove(move);
+        return bad;
+      }),
+      actions.end());
   if (actions.size() == 0) return;
 
   _best_move = actions[0];
@@ -160,6 +169,7 @@ void Engine::innerSearch() {
   for (Move& m : _pv) m = Move(0);
 
   while (!_search_stop) {
+    Move bestMoveThisDepth = actions[0];
     int bestScore = -CHECKMATE;
     if (depth > HEIGHTMAX) return;
     for (Move& m : actions) {
@@ -171,16 +181,25 @@ void Engine::innerSearch() {
         m.score = -negamax(depth);
         _3table.remove(_board.getHash());
       }
+
       _board.unapplyMove(m);
       if (_search_stop) return;
       if (m.score > bestScore) {
         bestScore = m.score;
         _pv[0] = m;
-        _best_move = m;
-        dumpPV();
+        bestMoveThisDepth = m;
+        std::stringstream message;
+        message << "PV: d" << depth + 1 << " (" << bestScore << ") ";
+        for (Move& m : _pv) {
+          if (Move(0) == m) break;
+          message << m << " ";
+        }
+        LOG(trace) << message.str();
+        if (CHECKMATE == bestScore) return;
       }
     }
 
+    _best_move = bestMoveThisDepth;
     _best_move_ready.notify_all();
 
     ++depth;
@@ -197,6 +216,9 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
 
   if (0 == depth) {
     result = Evaluate::GetInstance().getEvaluation(_board, _board.getMover());
+  } else if (_board.inCheckmate(_board.getMover())) {
+    result = -CHECKMATE;
+    for (int i = height; i < _pv.size(); ++i) _pv[i] = Move(0);
   } else {
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
     for (int i = 1; i < actions.size(); ++i) {
@@ -206,8 +228,7 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
       }
     }
 
-    if ((actions.size() == 0 && !_board.inCheckmate(_board.getMover())) ||
-        (_board.isDraw100())) {
+    if (actions.size() == 0 || _board.isDraw100()) {
       result = DRAW;  // stalemate
     } else {
       int left = actions.size();
@@ -218,13 +239,16 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
         }
 
         --left;
+        Color myColor = _board.getMover();
         _board.applyMove(m);
-        if (_3table.addWouldTrigger(_board.getHash())) {
-          m.score = DRAW;
-        } else {
-          _3table.add(_board.getHash());
-          m.score = -negamax(depth - 1, -beta, -alpha);
-          _3table.remove(_board.getHash());
+        if (!_board.inCheck(myColor)) {
+          if (_3table.addWouldTrigger(_board.getHash())) {
+            m.score = DRAW;
+          } else {
+            _3table.add(_board.getHash());
+            m.score = -negamax(depth - 1, -beta, -alpha, height + 1);
+            _3table.remove(_board.getHash());
+          }
         }
         _board.unapplyMove(m);
         if (_search_stop) return 0;
@@ -232,8 +256,9 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
         result = std::max(result, m.score);
         if (result > alpha) {
           alpha = result;
-          for (int i = 0; i <= height; ++i)
-            _pv[height - i] = _board.getPastMove(i);
+          _pv[height] = m;
+          for (int i = 0; i < height; ++i)
+            _pv[height - i - 1] = _board.getPastMove(i);
         }
       }
     }
