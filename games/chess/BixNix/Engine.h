@@ -68,7 +68,6 @@ class Engine {
   ThreefoldTable _3table;
 
   std::array<Move, 16> _pv;
-  void dumpPV();
 
   void collectStats();
   std::vector<float> _timePassed;
