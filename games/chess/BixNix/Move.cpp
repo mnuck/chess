@@ -79,6 +79,15 @@ bool Move::getSourceDirtied() const { return (_data & DIRTY_SOURCE_MASK); }
 
 bool Move::getTargetDirtied() const { return (_data & DIRTY_TARGET_MASK); }
 
+bool Move::getBestPossible() const { return (_data & BEST_POSSIBLE_MASK); }
+
+void Move::setBestPossible(const bool flag) {
+  if (flag)
+    _data |= BEST_POSSIBLE_MASK;
+  else
+    _data &= ~BEST_POSSIBLE_MASK;
+}
+
 std::ostream& operator<<(std::ostream& lhs, const Move& rhs) {
   static const char files[] = " abcdefgh";
 

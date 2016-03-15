@@ -41,6 +41,9 @@ class Move {
   bool getSourceDirtied() const;
   bool getTargetDirtied() const;
 
+  bool getBestPossible() const;
+  void setBestPossible(const bool flag);
+
   bool operator==(const Move& rhs) const;
 
   int score;
@@ -63,7 +66,7 @@ class Move {
   // 1 for castling direction
   // 1 for "this move dirtied source"
   // 1 for "this move dirtied target"
-  // 1 unused
+  // 1 best possible move
   static const uint32_t SOURCE_MASK = 0b00000000000000000000000000111111;
   static const uint32_t TARGET_MASK = 0b00000000000000000000111111000000;
   static const uint32_t PROMO_TYPE_MASK = 0b00000000000000000011000000000000;
@@ -78,6 +81,7 @@ class Move {
   static const uint32_t CASTL_DIR_MASK = 0b00010000000000000000000000000000;
   static const uint32_t DIRTY_SOURCE_MASK = 0b00100000000000000000000000000000;
   static const uint32_t DIRTY_TARGET_MASK = 0b01000000000000000000000000000000;
+  static const uint32_t BEST_POSSIBLE_MASK = 0b01000000000000000000000000000000;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Move& rhs);
