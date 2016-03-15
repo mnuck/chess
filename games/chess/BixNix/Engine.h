@@ -59,8 +59,12 @@ class Engine {
 
   Move _best_move;
 
-  unsigned long long _node_expansions;
-  unsigned long long _cutoffs;
+  uint64_t _node_expansions;
+
+  // https://chessprogramming.wikispaces.com/Sier%C5%BCant#Cutratio
+  uint64_t _szL1;
+  uint64_t _szL2;
+
   std::chrono::time_point<std::chrono::system_clock> _start_time;
 
   static const int TTSIZE = 33554432;
@@ -73,7 +77,6 @@ class Engine {
   std::vector<float> _timePassed;
   std::vector<float> _timeLeft;
   std::vector<uint64_t> _expansions;
-  std::vector<uint64_t> _cutoffSeries;
 
   std::vector<size_t> _ttSize;
   std::vector<size_t> _ttOccupancy;
