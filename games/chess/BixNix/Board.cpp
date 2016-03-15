@@ -825,10 +825,15 @@ std::vector<Move> Board::getMoves(const Color color,
     m.score = Evaluate::GetInstance().getEvaluation(m, _toMove);
   }
 
-  std::sort(
-      result.begin(), result.end(),
-      [&](const Move& a, const Move& b) -> bool { return a.score > b.score; });
-
+  if (1 == _sortHashNeither) {
+    std::sort(result.begin(), result.end(),
+              [&](const Move& a, const Move& b)
+                  -> bool { return a.score > b.score; });
+  } else if (2 == _sortHashNeither) {
+    std::make_heap(result.begin(), result.end(),
+                   [&](const Move& a, const Move& b)
+                       -> bool { return a.score < b.score; });
+  }
   return result;
 }
 

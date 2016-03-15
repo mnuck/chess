@@ -56,6 +56,8 @@ class Board {
 
   Move getPastMove(int i);
 
+  int _sortHashNeither;
+
  private:
   BitBoard getUnsafe(Color color) const;
   bool isUnsafe(Square square, Color color) const;
