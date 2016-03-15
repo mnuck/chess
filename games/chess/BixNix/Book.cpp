@@ -63,12 +63,19 @@ BixNix::Move Book::getMove() {
   auto range = _positions.equal_range(key);
   if (_positions.end() == range.first) return result;
 
-  // move with max weight
+  // fitness proportional move selection
   Book::Move winner;
-  uint32_t winnerWeight = 0;
+  uint32_t totalWeight = 0;
   for (auto it = range.first; it != range.second; ++it) {
-    if (std::get<1>(it->second) > winnerWeight) {
+    totalWeight += std::get<1>(it->second);
+  }
+  uint32_t choicePoint = rand() % totalWeight;
+  uint32_t acc = 0;
+  for (auto it = range.first; it != range.second; ++it) {
+    acc += std::get<1>(it->second);
+    if (choicePoint <= acc) {
       winner = std::get<0>(it->second);
+      break;
     }
   }
 
