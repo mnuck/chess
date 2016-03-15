@@ -821,14 +821,6 @@ std::vector<Move> Board::getMoves(const Color color,
 
   if (result.size() == 0) _terminalState = Draw;
 
-  for (auto& m : result) {
-    m.score = Evaluate::GetInstance().getEvaluation(m, _toMove);
-  }
-
-  std::sort(
-      result.begin(), result.end(),
-      [&](const Move& a, const Move& b) -> bool { return a.score > b.score; });
-
   return result;
 }
 
