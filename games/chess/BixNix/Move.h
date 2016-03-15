@@ -46,8 +46,6 @@ class Move {
 
   bool operator==(const Move& rhs) const;
 
-  int score;
-
  private:
   uint32_t _data;
 

@@ -5,6 +5,7 @@
 #include <ctime>
 #include <cmath>
 #include <functional>
+#include <unordered_map>
 #include <vector>
 #include <sstream>
 
@@ -96,7 +97,7 @@ Move Engine::getMove() {
   _board.applyMove(move);
   _3table.add(_board.getHash());
 
-  LOG(trace) << "engine sending (" << move.score << ") " << move;
+  LOG(trace) << "engine sending " << move;
   LOG(trace) << "board\n" << _board;
 
   startSearch();  // start pondering
@@ -132,21 +133,22 @@ void Engine::innerSearch() {
     orderMoves(actions, None, &_pv[0]);
     Move bestMoveThisDepth = actions[0];
     int bestScore = -CHECKMATE;
+    int score;
     if (depth > HEIGHTMAX) return;
     for (Move& m : actions) {
       _board.applyMove(m);
       if (_3table.addWouldTrigger(_board.getHash())) {
-        m.score = DRAW;
+        score = DRAW;
       } else {
         _3table.add(_board.getHash());
-        m.score = -negamax(depth);
+        score = -negamax(depth);
         _3table.remove(_board.getHash());
       }
 
       _board.unapplyMove(m);
       if (_search_stop) return;
-      if (m.score > bestScore) {
-        bestScore = m.score;
+      if (score > bestScore) {
+        bestScore = score;
         _pv[0] = m;
         bestMoveThisDepth = m;
         std::stringstream message;
@@ -194,6 +196,7 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
     } else {
       int opens = 0;
       for (Move& m : actions) {
+        int score;
         ++opens;
         if (result >= beta) {
           _szL1 += opens;
@@ -204,16 +207,16 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
         Color myColor = _board.getMover();
         _board.applyMove(m);
         if (_3table.addWouldTrigger(_board.getHash())) {
-          m.score = DRAW;
+          score = DRAW;
         } else {
           _3table.add(_board.getHash());
-          m.score = -negamax(depth - 1, -beta, -alpha, height + 1);
+          score = -negamax(depth - 1, -beta, -alpha, height + 1);
           _3table.remove(_board.getHash());
         }
         _board.unapplyMove(m);
         if (_search_stop) return 0;
 
-        result = std::max(result, m.score);
+        result = std::max(result, score);
         if (result > alpha) {
           alpha = result;
           _pv[height] = m;
@@ -243,19 +246,21 @@ void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
 
   if (None == policy) return;
 
+  std::unordered_map<uint32_t, int> scores;
+
   for (auto& m : moves)
-    m.score = Evaluate::GetInstance().getEvaluation(m, _board.getMover());
+    scores[m] = Evaluate::GetInstance().getEvaluation(m, _board.getMover());
 
   size_t offset = gotPVMove ? 1 : 0;
   if (Heap == policy) {
     std::make_heap(moves.begin() + offset, moves.end(),
                    [&](const Move& a, const Move& b)
-                       -> bool { return a.score < b.score; });
+                       -> bool { return scores[a] < scores[b]; });
 
   } else {  // Sort == policy
     std::sort(moves.begin() + offset, moves.end(),
               [&](const Move& a, const Move& b)
-                  -> bool { return a.score > b.score; });
+                  -> bool { return scores[a] > scores[b]; });
   }
 }
 
