@@ -83,9 +83,6 @@ class Engine {
   std::vector<uint64_t> _ttMisses;
   std::vector<uint64_t> _ttHits;
   std::vector<uint64_t> _ttCollisions;
-
-  bool _pvFirst;
-  int _sortHashNeither;
 };
 }
 
