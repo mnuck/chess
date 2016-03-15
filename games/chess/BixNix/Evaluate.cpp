@@ -37,6 +37,7 @@ int Evaluate::getEvaluation(const Move& move, const Color color) {
 
   result -= _pieceSquare[color][move.getMovingPiece()][63 - move.getSource()];
   result += _pieceSquare[color][move.getMovingPiece()][63 - move.getTarget()];
+  return result;
 }
 
 int Evaluate::materialEval(const Board& board) {
