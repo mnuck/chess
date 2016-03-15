@@ -24,6 +24,18 @@ void Engine::end() {
   auto diff =
       std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
+  if (_pvFirst)
+    LOG(trace) << "PV Node First";
+  else
+    LOG(trace) << "PV Node Not Special";
+
+  if (0 == _sortHashNeither)
+    LOG(trace) << "No Move Sorting";
+  else if (1 == _sortHashNeither)
+    LOG(trace) << "std::sort Move Sorting";
+  else
+    LOG(trace) << "std::make_hash Move Sorting";
+
   LOG(trace) << diff.count() << " seconds";
   LOG(trace) << _node_expansions << " node expansions";
   LOG(trace) << _szL2 << " cutoff nodes";
@@ -205,10 +217,13 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
     for (int i = height; i < _pv.size(); ++i) _pv[i] = Move(0);
   } else {
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
-    for (int i = 1; i < actions.size(); ++i) {
-      if (_pv[height] == actions[i]) {
-        std::swap(actions[0], actions[i]);
-        break;
+
+    if (_pvFirst) {
+      for (int i = 1; i < actions.size(); ++i) {
+        if (_pv[height] == actions[i]) {
+          std::swap(actions[0], actions[i]);
+          break;
+        }
       }
     }
 
@@ -292,7 +307,11 @@ void Engine::init(Color color, float time) {
 
   _start_time = std::chrono::system_clock::now();
 
+  _pvFirst = rand() % 2 == 0;
+  _sortHashNeither = rand() % 3;
+
   _board = Board::initial();
+  _board._sortHashNeither = _sortHashNeither;
   startSearch();
 }
 
