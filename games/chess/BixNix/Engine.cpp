@@ -49,31 +49,6 @@ void Engine::end() {
   LOG(trace) << (long)occupied << " cache slots occupied";
   LOG(trace) << (long)ttableSize << " cache slots total";
   LOG(trace) << occupied / static_cast<double>(ttableSize) << " occupancy";
-
-  size_t statCount = _timeLeft.size();
-  LOG(trace) << "timeLeft,timePassed,expansions,ttSize,ttOccupancy,"
-                "ttMisses,ttHits,ttCollisions";
-  for (size_t i = 0; i < statCount; ++i) {
-    LOG(trace) << _timeLeft[i] << "," << _timePassed[i] << "," << _expansions[i]
-               << "," << _ttSize[i] << "," << _ttOccupancy[i] << ","
-               << _ttMisses[i] << "," << _ttHits[i] << "," << _ttCollisions[i];
-  }
-}
-
-void Engine::collectStats() {
-  auto end_time = std::chrono::system_clock::now();
-  auto diff =
-      std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
-
-  _timeLeft.push_back(_time);
-  _timePassed.push_back(diff.count());
-  _expansions.push_back(_node_expansions);
-
-  _ttSize.push_back(_ttable.getSize());
-  _ttOccupancy.push_back(_ttable.getOccupancy());
-  _ttMisses.push_back(_ttable._misses);
-  _ttHits.push_back(_ttable._hits);
-  _ttCollisions.push_back(_ttable._collisions);
 }
 
 Move Engine::getMove() {
@@ -281,7 +256,6 @@ void Engine::stopSearch() {
   if (false == _search_stop) {
     _search_stop = true;
     _searcherStopped.wait();
-    collectStats();
   }
 }
 

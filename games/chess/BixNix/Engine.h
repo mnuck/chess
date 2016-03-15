@@ -72,17 +72,6 @@ class Engine {
   ThreefoldTable _3table;
 
   std::array<Move, 16> _pv;
-
-  void collectStats();
-  std::vector<float> _timePassed;
-  std::vector<float> _timeLeft;
-  std::vector<uint64_t> _expansions;
-
-  std::vector<size_t> _ttSize;
-  std::vector<size_t> _ttOccupancy;
-  std::vector<uint64_t> _ttMisses;
-  std::vector<uint64_t> _ttHits;
-  std::vector<uint64_t> _ttCollisions;
 };
 }
 
