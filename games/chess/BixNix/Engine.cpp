@@ -74,7 +74,7 @@ Move Engine::getMove() {
     int diff = duration_cast<microseconds>(timeSplit - startTime).count();
     splits.push_back(diff);
 
-    if (_best_move.score >= CHECKMATE) {
+    if (_best_move.getBestPossible()) {
       break;
     }
 
@@ -118,7 +118,10 @@ void Engine::innerSearch() {
   if (actions.size() == 0) return;
 
   _best_move = actions[0];
+  if (actions.size() == 1) _best_move.setBestPossible(true);
+
   _best_move_ready.notify_all();
+  if (actions.size() == 1) return;
 
   unsigned int depth = 0;
   for (Move& m : _pv) m = Move(0);
@@ -153,6 +156,7 @@ void Engine::innerSearch() {
         LOG(trace) << message.str();
         if (CHECKMATE == bestScore) {
           _best_move = bestMoveThisDepth;
+          _best_move.setBestPossible(true);
           _best_move_ready.notify_all();
           return;
         }
