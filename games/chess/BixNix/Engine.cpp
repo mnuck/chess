@@ -24,20 +24,20 @@ void Engine::end() {
   auto diff =
       std::chrono::duration_cast<std::chrono::seconds>(end_time - _start_time);
 
-  LOG(trace) << _node_expansions << " node expansions";
-  LOG(trace) << _cutoffs << " cutoffs";
   LOG(trace) << diff.count() << " seconds";
+  LOG(trace) << _node_expansions << " node expansions";
+  LOG(trace) << _szL2 << " cutoff nodes";
 
-  LOG(trace) << _cutoffs / static_cast<double>(_node_expansions + _cutoffs)
-             << " cutoff ratio";
+  LOG(trace) << _szL1 / static_cast<double>(_szL2) << " beta-cutoff ratio";
   LOG(trace) << _node_expansions / static_cast<double>(diff.count())
              << " expansions per second";
-  LOG(trace) << (_node_expansions + _cutoffs) /
-                    static_cast<double>(diff.count())
-             << " nodes considered per second";
 
-  LOG(trace) << _ttable._collisions << " cache collisions";
+  LOG(trace) << (_node_expansions + _ttable._hits) /
+                    static_cast<double>(diff.count())
+             << " expansions per second counting cache hits";
+
   LOG(trace) << _ttable._hits << " cache hits";
+  LOG(trace) << _ttable._collisions << " cache collisions";
   LOG(trace) << _ttable._misses << " cache misses";
   LOG(trace) << _ttable._hits /
                     static_cast<double>(_ttable._hits + _ttable._misses)
@@ -51,13 +51,12 @@ void Engine::end() {
   LOG(trace) << occupied / static_cast<double>(ttableSize) << " occupancy";
 
   size_t statCount = _timeLeft.size();
-  LOG(trace) << "timeLeft,timePassed,expansions,cutoffs,ttSize,ttOccupancy,"
+  LOG(trace) << "timeLeft,timePassed,expansions,ttSize,ttOccupancy,"
                 "ttMisses,ttHits,ttCollisions";
   for (size_t i = 0; i < statCount; ++i) {
     LOG(trace) << _timeLeft[i] << "," << _timePassed[i] << "," << _expansions[i]
-               << "," << _cutoffSeries[i] << "," << _ttSize[i] << ","
-               << _ttOccupancy[i] << "," << _ttMisses[i] << "," << _ttHits[i]
-               << "," << _ttCollisions[i];
+               << "," << _ttSize[i] << "," << _ttOccupancy[i] << ","
+               << _ttMisses[i] << "," << _ttHits[i] << "," << _ttCollisions[i];
   }
 }
 
@@ -69,7 +68,6 @@ void Engine::collectStats() {
   _timeLeft.push_back(_time);
   _timePassed.push_back(diff.count());
   _expansions.push_back(_node_expansions);
-  _cutoffSeries.push_back(_cutoffs);
 
   _ttSize.push_back(_ttable.getSize());
   _ttOccupancy.push_back(_ttable.getOccupancy());
@@ -217,14 +215,15 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
     if (actions.size() == 0 || _board.isDraw100()) {
       result = DRAW;  // stalemate
     } else {
-      int left = actions.size();
+      int opens = 0;
       for (Move& m : actions) {
+        ++opens;
         if (result >= beta) {
-          _cutoffs += left;
+          _szL1 += opens;
+          _szL2 += 1;
           break;
         }
 
-        --left;
         Color myColor = _board.getMover();
         _board.applyMove(m);
         if (_3table.addWouldTrigger(_board.getHash())) {
@@ -256,7 +255,8 @@ Engine::Engine()
     : _searcher(nullptr),
       _best_move(Move()),
       _node_expansions(0),
-      _cutoffs(0),
+      _szL1(0),
+      _szL2(0),
       _search_stop(true),
       _search_end(false) {
   _ttable.resize(TTSIZE);
