@@ -37,6 +37,10 @@ class Engine {
   int negamax(const int depth, int alpha = -CHECKMATE, int beta = CHECKMATE,
               const int height = 1);
 
+  enum MoveOrderPolicy { None, Heap, Sort };
+  void orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
+                  const Move* const pvMove);
+
   void startSearch();
   void stopSearch();
   void search();
