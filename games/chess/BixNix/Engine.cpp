@@ -118,8 +118,10 @@ void Engine::innerSearch() {
   if (actions.size() == 0) return;
 
   _best_move = actions[0];
-  if (actions.size() == 1) _best_move.setBestPossible(true);
-
+  if (actions.size() == 1) {
+    _best_move.setBestPossible(true);
+    LOG(trace) << "only move: " << _best_move;
+  }
   _best_move_ready.notify_all();
   if (actions.size() == 1) return;
 
