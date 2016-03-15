@@ -15,6 +15,7 @@ class Evaluate {
  protected:
   Evaluate();
 
+  // https://chessprogramming.wikispaces.com/Simplified+evaluation+function
   int materialEval(const Board& board);
   int pieceSquareEval(const Board& board);
 
