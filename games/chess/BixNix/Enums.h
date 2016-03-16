@@ -18,8 +18,6 @@ enum Piece { Knight, Rook, Bishop, Queen, King, Pawn };
 
 enum Color { White, Black };
 
-enum MinimaxPlayer { Min, Max };
-
 enum TerminalState { Running, Draw, WhiteWin, BlackWin };
 }
 
