@@ -147,6 +147,7 @@ void Engine::innerSearch() {
 
       _board.unapplyMove(m);
       if (_search_stop) return;
+      if (-DRAW == score) score = DRAW;  // hate to draw
       if (score > bestScore) {
         bestScore = score;
         _pv[0] = m;
