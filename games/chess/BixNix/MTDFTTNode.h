@@ -1,7 +1,7 @@
 #ifndef _MTDF_TTNODE_H_
 #define _MTDF_TTNODE_H_
 
-#include <climits>
+#include <limits>
 
 #include "Enums.h"
 #include "Move.h"
@@ -12,14 +12,14 @@ class MTDFTTNode {
  public:
   MTDFTTNode()
       : _hash(0xFFFFFFFFFFFFFFFFLL),
-        _lower(INT_MIN),
-        _upper(INT_MAX),
+        _lower(std::numeric_limits<Score>::min()),
+        _upper(std::numeric_limits<Score>::max()),
         _depth(0) {}
 
   ZobristNumber _hash;
-  int _lower;
-  int _upper;
-  unsigned int _depth;
+  Score _lower;
+  Score _upper;
+  Depth _depth;
 };
 }
 

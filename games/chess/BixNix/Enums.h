@@ -5,13 +5,14 @@
 
 namespace BixNix {
 
-const int CHECKMATE = 100000;
-const int DRAW = -99999;
-
 typedef uint64_t BitBoard;
 typedef uint64_t ZobristNumber;
-
 typedef uint8_t Square;
+typedef int16_t Score;
+typedef int8_t Depth;
+
+const Score CHECKMATE = 15000;
+const Score DRAW = -14999;
 
 enum Piece { Knight, Rook, Bishop, Queen, King, Pawn };
 

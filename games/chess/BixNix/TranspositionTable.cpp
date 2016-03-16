@@ -33,9 +33,8 @@ void TranspositionTable::resize(const size_t size) {
   for (size_t i = 0; i < _size; ++i) _table[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
 }
 
-bool TranspositionTable::get(const ZobristNumber key,
-                             const unsigned int priority, int& alpha, int& beta,
-                             int& score) {
+bool TranspositionTable::get(const ZobristNumber key, const Depth priority,
+                             Score& alpha, Score& beta, Score& score) {
   MTDFTTNode& node = _table[key % _size];
   if (node._hash == key && node._depth >= priority) {
     ++_hits;
@@ -59,16 +58,16 @@ bool TranspositionTable::get(const ZobristNumber key,
   return false;
 }
 
-bool TranspositionTable::set(const ZobristNumber key, const int score,
-                             const unsigned int priority, const int alpha,
-                             const int beta) {
+bool TranspositionTable::set(const ZobristNumber key, const Score score,
+                             const Depth priority, const Score alpha,
+                             const Score beta) {
   MTDFTTNode& node = _table[key % _size];
   if (node._hash != 0xFFFFFFFFFFFFFFFFLL && node._hash != key) ++_collisions;
 
   if (key != node._hash || node._depth < priority) {
     node._hash = key;
-    node._lower = INT_MIN;
-    node._upper = INT_MAX;
+    node._lower = std::numeric_limits<Score>::min();
+    node._upper = std::numeric_limits<Score>::max();
     node._depth = priority;
     if (score < beta) node._lower = score;
     if (score > alpha) node._upper = score;

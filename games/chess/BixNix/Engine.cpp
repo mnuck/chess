@@ -132,8 +132,8 @@ void Engine::innerSearch() {
   while (!_search_stop) {
     orderMoves(actions, None, _pv[0]);
     Move bestMoveThisDepth = actions[0];
-    int bestScore = -CHECKMATE;
-    int score;
+    Score bestScore = -CHECKMATE;
+    Score score;
     if (depth > HEIGHTMAX) return;
     for (Move& m : actions) {
       _board.applyMove(m);
@@ -174,10 +174,11 @@ void Engine::innerSearch() {
   }
 }
 
-int Engine::negamax(const int depth, int alpha, int beta, const int height) {
+int Engine::negamax(const Depth depth, Score alpha, Score beta,
+                    const Depth height) {
   if (_search_stop) return 0;
 
-  int result(-CHECKMATE);
+  Score result(-CHECKMATE);
 
   if (_ttable.get(_board.getHash(), depth, alpha, beta, result)) return result;
   ++_node_expansions;
@@ -194,9 +195,9 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
     if (actions.size() == 0 || _board.isDraw100()) {
       result = DRAW;  // stalemate
     } else {
-      int opens = 0;
+      uint8_t opens = 0;
       for (Move& m : actions) {
-        int score;
+        Score score;
         if (result >= beta) {
           _szL1 += opens;
           _szL2 += 1;
