@@ -130,7 +130,7 @@ void Engine::innerSearch() {
   for (Move& m : _pv) m = Move(0);
 
   while (!_search_stop) {
-    orderMoves(actions, None, &_pv[0]);
+    orderMoves(actions, None, _pv[0]);
     Move bestMoveThisDepth = actions[0];
     int bestScore = -CHECKMATE;
     int score;
@@ -189,7 +189,7 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
     for (int i = height; i < _pv.size(); ++i) _pv[i] = Move(0);
   } else {
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
-    orderMoves(actions, Sort, &_pv[height]);
+    orderMoves(actions, Sort, _pv[height]);
 
     if (actions.size() == 0 || _board.isDraw100()) {
       result = DRAW;  // stalemate
@@ -232,11 +232,11 @@ int Engine::negamax(const int depth, int alpha, int beta, const int height) {
 }
 
 void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
-                        const Move* const pvMove) {
+                        const Move& pvMove) {
   bool gotPVMove = false;
-  if (nullptr != pvMove && *pvMove != Move(0)) {
-    for (int i = 1; i < moves.size(); ++i) {
-      if (*pvMove == moves[i]) {
+  if (pvMove != Move(0)) {
+    for (int i = 0; i < moves.size(); ++i) {
+      if (pvMove == moves[i]) {
         std::swap(moves[0], moves[i]);
         gotPVMove = true;
         break;
@@ -254,7 +254,6 @@ void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
     std::make_heap(moves.begin() + offset, moves.end(),
                    [&](const Move& a, const Move& b)
                        -> bool { return a.score < b.score; });
-
   } else {  // Sort == policy
     std::sort(moves.begin() + offset, moves.end(),
               [&](const Move& a, const Move& b)
