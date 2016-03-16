@@ -3,8 +3,8 @@
 
 namespace BixNix {
 
-int Evaluate::getEvaluation(Board& board, const Color color) {
-  int result = 0;
+Score Evaluate::getEvaluation(Board& board, const Color color) {
+  Score result = 0;
   if (board.inCheckmate(board.getMover())) {
     if (board.getMover() == color)
       return -CHECKMATE;
@@ -19,8 +19,8 @@ int Evaluate::getEvaluation(Board& board, const Color color) {
   return result;
 }
 
-int Evaluate::getEvaluation(const Move& move, const Color color) {
-  int result = 0;
+Score Evaluate::getEvaluation(const Move& move, const Color color) {
+  Score result = 0;
   if (move.getCastling()) result += 1000;
   if (move.getEnPassanting()) result += 1000;
   if (move.getPromoting()) {
@@ -40,18 +40,18 @@ int Evaluate::getEvaluation(const Move& move, const Color color) {
   return result;
 }
 
-int Evaluate::materialEval(const Board& board) {
-  int result = 0;
+Score Evaluate::materialEval(const Board& board) {
+  Score result = 0;
   for (size_t i = 0; i < 6; ++i) {
-    int diff = __builtin_popcountll(board._pieces[i] & board._colors[White]) -
-               __builtin_popcountll(board._pieces[i] & board._colors[Black]);
+    Score diff = __builtin_popcountll(board._pieces[i] & board._colors[White]) -
+                 __builtin_popcountll(board._pieces[i] & board._colors[Black]);
     result += diff * _material[i];
   }
   return result;
 }
 
-int Evaluate::pieceSquareEval(const Board& board) {
-  int result = 0;
+Score Evaluate::pieceSquareEval(const Board& board) {
+  Score result = 0;
   for (size_t piece = 0; piece < 6; ++piece) {
     BitBoard dudes(board._pieces[piece] & board._colors[White]);
     while (0LL != dudes) {
