@@ -39,7 +39,7 @@ class Engine {
 
   enum MoveOrderPolicy { None, Heap, Sort };
   void orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
-                  const Move* const pvMove);
+                  const Move& pvMove);
 
   void startSearch();
   void stopSearch();
