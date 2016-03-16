@@ -50,7 +50,7 @@ class Engine {
   Color _color;
   float _time;
 
-  static const int HEIGHTMAX = 16;
+  static const int HEIGHTMAX = 50;
 
   std::thread* _searcher;
   std::atomic_bool _search_stop;
@@ -75,7 +75,7 @@ class Engine {
   TranspositionTable _ttable;
   ThreefoldTable _3table;
 
-  std::array<Move, 16> _pv;
+  std::array<Move, HEIGHTMAX> _pv;
 };
 }
 
