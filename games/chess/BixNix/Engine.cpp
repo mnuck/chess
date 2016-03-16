@@ -246,21 +246,19 @@ void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
 
   if (None == policy) return;
 
-  std::unordered_map<uint32_t, int> scores;
-
   for (auto& m : moves)
-    scores[m] = Evaluate::GetInstance().getEvaluation(m, _board.getMover());
+    m.score = Evaluate::GetInstance().getEvaluation(m, _board.getMover());
 
   size_t offset = gotPVMove ? 1 : 0;
   if (Heap == policy) {
     std::make_heap(moves.begin() + offset, moves.end(),
                    [&](const Move& a, const Move& b)
-                       -> bool { return scores[a] < scores[b]; });
+                       -> bool { return a.score < b.score; });
 
   } else {  // Sort == policy
     std::sort(moves.begin() + offset, moves.end(),
               [&](const Move& a, const Move& b)
-                  -> bool { return scores[a] > scores[b]; });
+                  -> bool { return a.score > b.score; });
   }
 }
 
