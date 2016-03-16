@@ -14,14 +14,12 @@ class MTDFTTNode {
       : _hash(0xFFFFFFFFFFFFFFFFLL),
         _lower(INT_MIN),
         _upper(INT_MAX),
-        _depth(0),
-        _move(Move()) {}
+        _depth(0) {}
 
   ZobristNumber _hash;
   int _lower;
   int _upper;
   unsigned int _depth;
-  Move _move;
 };
 }
 
