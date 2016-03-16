@@ -236,9 +236,9 @@ void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
                         const Move& pvMove) {
   bool gotPVMove = false;
   if (pvMove != Move(0)) {
-    for (int i = 0; i < moves.size(); ++i) {
-      if (pvMove == moves[i]) {
-        std::swap(moves[0], moves[i]);
+    for (auto& m : moves) {
+      if (pvMove == m) {
+        std::swap(moves[0], m);
         gotPVMove = true;
         break;
       }
