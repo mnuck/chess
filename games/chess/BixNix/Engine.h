@@ -34,8 +34,8 @@ class Engine {
   Move getMove();
 
  private:
-  int negamax(const Depth depth, Score alpha = -CHECKMATE,
-              Score beta = CHECKMATE, const Depth height = 1);
+  Score negamax(const Depth depth, Score alpha = -CHECKMATE,
+                Score beta = CHECKMATE, const Depth height = 1);
 
   enum MoveOrderPolicy { None, Heap, Sort };
   void orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,

@@ -175,8 +175,8 @@ void Engine::innerSearch() {
   }
 }
 
-int Engine::negamax(const Depth depth, Score alpha, Score beta,
-                    const Depth height) {
+Score Engine::negamax(const Depth depth, Score alpha, Score beta,
+                      const Depth height) {
   if (_search_stop) return 0;
 
   Score result(-CHECKMATE);
