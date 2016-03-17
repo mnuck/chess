@@ -134,7 +134,7 @@ void Engine::innerSearch() {
     Move bestMoveThisDepth = actions[0];
     Score bestScore = -CHECKMATE;
     Score score;
-    if (depth > HEIGHTMAX) return;
+    if (depth > (HEIGHTMAX - 32)) return;
     for (Move& m : actions) {
       _board.applyMove(m);
       if (_3table.addWouldTrigger(_board.getHash())) {

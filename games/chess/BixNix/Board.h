@@ -85,8 +85,8 @@ class Board {
 
   std::array<BitBoard, 6> _pieces;
   std::array<BitBoard, 2> _colors;
-  BNStack<Move, 20> _moves;
-  BNStack<int, 20> _draw100Counter;
+  BNStack<Move, HEIGHTMAX> _moves;
+  BNStack<int, HEIGHTMAX> _draw100Counter;
   BitBoard _dirty;
   Color _toMove;
   ZobristNumber _hash;
