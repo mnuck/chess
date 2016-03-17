@@ -13,6 +13,7 @@ typedef int8_t Depth;
 
 const Score CHECKMATE = 15000;
 const Score DRAW = -14999;
+const Depth HEIGHTMAX = 64;
 
 enum Piece { Knight, Rook, Bishop, Queen, King, Pawn };
 

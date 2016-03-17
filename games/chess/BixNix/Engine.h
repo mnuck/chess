@@ -50,8 +50,6 @@ class Engine {
   Color _color;
   float _time;
 
-  static const int HEIGHTMAX = 50;
-
   std::thread* _searcher;
   std::atomic_bool _search_stop;
   std::atomic_bool _search_end;
