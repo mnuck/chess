@@ -69,7 +69,7 @@ class Engine {
 
   std::chrono::time_point<std::chrono::system_clock> _start_time;
 
-  static const int TTSIZE = 67108864;
+  static const int TTSIZE = 16777216;
   TranspositionTable _ttable;
   ThreefoldTable _3table;
 
