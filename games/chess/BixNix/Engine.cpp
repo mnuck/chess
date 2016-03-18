@@ -53,8 +53,7 @@ void Engine::end() {
 }
 
 Move Engine::getMove() {
-  stopSearch();   // stop pondering
-  startSearch();  // start searching
+  startSearch();
 
   using namespace std::chrono;
   int runTime = std::min((int)_time / 10, 20);
@@ -99,8 +98,6 @@ Move Engine::getMove() {
 
   LOG(trace) << "engine sending " << move;
   LOG(trace) << "board\n" << _board;
-
-  startSearch();  // start pondering
 
   return move;
 }
@@ -308,16 +305,13 @@ void Engine::init(Color color, float time) {
   _start_time = std::chrono::system_clock::now();
 
   _board = Board::initial();
-  startSearch();
 }
 
 void Engine::reportMove(Move move, float time) {
   _time = time;
 
-  stopSearch();
   _board.applyExternalMove(move);
   _3table.add(_board.getHash());
   LOG(trace) << "board\n" << _board;
-  startSearch();
 }
 }
