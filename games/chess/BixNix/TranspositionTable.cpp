@@ -10,6 +10,7 @@ TranspositionTable::TranspositionTable(const size_t size)
       _misses(0),
       _hits(0),
       _size(size),
+      _maxOccupancy(0),
       _table(new MTDFTTNode[size]) {
   clear();
 }
@@ -34,6 +35,11 @@ void TranspositionTable::resize(const size_t size) {
 }
 
 void TranspositionTable::clear() {
+  size_t occupancy = 0;
+  for (size_t i = 0; i < _size; ++i)
+    if (_table[i]._hash != 0xFFFFFFFFFFFFFFFFLL) ++occupancy;
+  _maxOccupancy = std::max(_maxOccupancy, occupancy);
+
   for (size_t i = 0; i < _size; ++i) _table[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
 }
 
@@ -88,12 +94,7 @@ bool TranspositionTable::set(const ZobristNumber key, const Depth priority,
   return false;
 }
 
-size_t TranspositionTable::getOccupancy() {
-  size_t result(0);
-  for (size_t i = 0; i < _size; ++i)
-    if (_table[i]._hash != 0xFFFFFFFFFFFFFFFFLL) ++result;
-  return result;
-}
+size_t TranspositionTable::getOccupancy() { return _maxOccupancy; }
 
 size_t TranspositionTable::getSize() { return _size; }
 }
