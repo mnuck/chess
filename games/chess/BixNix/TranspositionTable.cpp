@@ -58,9 +58,9 @@ bool TranspositionTable::get(const ZobristNumber key, const Depth priority,
   return false;
 }
 
-bool TranspositionTable::set(const ZobristNumber key, const Score score,
-                             const Depth priority, const Score alpha,
-                             const Score beta) {
+bool TranspositionTable::set(const ZobristNumber key, const Depth priority,
+                             const Score alpha, const Score beta,
+                             const Score score) {
   MTDFTTNode& node = _table[key % _size];
   if (node._hash != 0xFFFFFFFFFFFFFFFFLL && node._hash != key) ++_collisions;
 

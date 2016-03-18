@@ -229,7 +229,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     }
   }
 
-  _ttable.set(_board.getHash(), result, depth, alpha, beta);
+  _ttable.set(_board.getHash(), depth, alpha, beta, result);
   return result;
 }
 

@@ -21,8 +21,8 @@ class TranspositionTable {
   bool get(const ZobristNumber key, const Depth priority, Score& alpha,
            Score& beta, Score& score);
 
-  bool set(const ZobristNumber key, const Score score, const Depth priority,
-           const Score alpha, const Score beta);
+  bool set(const ZobristNumber key, const Depth priority, const Score alpha,
+           const Score beta, const Score score);
 
   size_t getOccupancy();
   size_t getSize();
