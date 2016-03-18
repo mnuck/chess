@@ -11,7 +11,7 @@ TranspositionTable::TranspositionTable(const size_t size)
       _hits(0),
       _size(size),
       _table(new MTDFTTNode[size]) {
-  for (size_t i = 0; i < _size; ++i) _table[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
+  clear();
 }
 
 TranspositionTable::~TranspositionTable() {
@@ -30,28 +30,36 @@ void TranspositionTable::resize(const size_t size) {
   _size = size;
   _table = new MTDFTTNode[size];
 
+  clear();
+}
+
+void TranspositionTable::clear() {
   for (size_t i = 0; i < _size; ++i) _table[i]._hash = 0xFFFFFFFFFFFFFFFFLL;
 }
 
 bool TranspositionTable::get(const ZobristNumber key, const Depth priority,
-                             Score& alpha, Score& beta, Score& score) {
+                             Score& alpha, Score& beta, Score& score,
+                             Move& move) {
   MTDFTTNode& node = _table[key % _size];
   if (node._hash == key && node._depth >= priority) {
     ++_hits;
-    if (node._lower >= beta) {
-      score = node._lower;
+    move = node._move;
+    switch (node._type) {
+      case MTDFTTNode::Type::Exact:
+        score = node._score;
+        return true;
+        break;
+      case MTDFTTNode::Type::Lower:
+        alpha = std::max(alpha, node._score);
+        break;
+      case MTDFTTNode::Type::Upper:
+        beta = std::min(beta, node._score);
+        break;
+    }
+    if (alpha >= beta) {
+      score = node._score;
       return true;
     }
-    if (node._upper <= alpha) {
-      score = node._upper;
-      return true;
-    }
-    if (node._lower == node._upper) {
-      score = node._lower;
-      return true;
-    }
-    alpha = std::max(alpha, node._lower);
-    beta = std::min(beta, node._upper);
   } else
     ++_misses;
 
@@ -60,17 +68,21 @@ bool TranspositionTable::get(const ZobristNumber key, const Depth priority,
 
 bool TranspositionTable::set(const ZobristNumber key, const Depth priority,
                              const Score alpha, const Score beta,
-                             const Score score) {
+                             const Score score, const Move& move) {
   MTDFTTNode& node = _table[key % _size];
   if (node._hash != 0xFFFFFFFFFFFFFFFFLL && node._hash != key) ++_collisions;
 
   if (key != node._hash || node._depth < priority) {
     node._hash = key;
-    node._lower = std::numeric_limits<Score>::min();
-    node._upper = std::numeric_limits<Score>::max();
+    node._score = score;
     node._depth = priority;
-    if (score < beta) node._lower = score;
-    if (score > alpha) node._upper = score;
+    node._move = move;
+    if (score <= alpha)
+      node._type = MTDFTTNode::Type::Upper;
+    else if (score >= beta)
+      node._type = MTDFTTNode::Type::Lower;
+    else
+      node._type = MTDFTTNode::Type::Exact;
     return true;
   }
   return false;

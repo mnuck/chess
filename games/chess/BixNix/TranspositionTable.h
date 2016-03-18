@@ -1,6 +1,7 @@
 //
 // TranspositionTable.h
 //
+// http://www.gamedev.net/topic/503234-transposition-table-question/#entry4282970
 
 #ifndef __TRANSPOSITIONTABLE_H__
 #define __TRANSPOSITIONTABLE_H__
@@ -17,12 +18,13 @@ class TranspositionTable {
   ~TranspositionTable();
 
   void resize(const size_t size);
+  void clear();
 
   bool get(const ZobristNumber key, const Depth priority, Score& alpha,
-           Score& beta, Score& score);
+           Score& beta, Score& score, Move& move);
 
   bool set(const ZobristNumber key, const Depth priority, const Score alpha,
-           const Score beta, const Score score);
+           const Score beta, const Score score, const Move& move);
 
   size_t getOccupancy();
   size_t getSize();

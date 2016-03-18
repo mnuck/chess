@@ -10,6 +10,7 @@ namespace BixNix {
 
 class Move {
  public:
+  typedef uint32_t Data;
   Move() : _data(0x0000) {}
   Move(uint32_t data) : _data(data) {}
   Move(Square source, Square target, Piece piece);
@@ -49,7 +50,7 @@ class Move {
   int score;
 
  private:
-  uint32_t _data;
+  Data _data;
 
   // LSB to MSB, bits per item
   // 6 source square

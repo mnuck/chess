@@ -180,8 +180,10 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   if (_search_stop) return 0;
 
   Score result(-CHECKMATE);
+  Move ttMove = 0;
 
-  if (_ttable.get(_board.getHash(), depth, alpha, beta, result)) return result;
+  if (_ttable.get(_board.getHash(), depth, alpha, beta, result, ttMove))
+    return result;
   ++_node_expansions;
 
   if (0 == depth) {
@@ -220,6 +222,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
 
         result = std::max(result, score);
         if (result > alpha) {
+          ttMove = m;
           alpha = result;
           _pv[height] = m;
           for (int i = 0; i < height; ++i)
@@ -229,7 +232,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     }
   }
 
-  _ttable.set(_board.getHash(), depth, alpha, beta, result);
+  _ttable.set(_board.getHash(), depth, alphaParent, beta, result, ttMove);
   return result;
 }
 
@@ -293,6 +296,7 @@ void Engine::stopSearch() {
   if (false == _search_stop) {
     _search_stop = true;
     _searcherStopped.wait();
+    _ttable.clear();
   }
 }
 
