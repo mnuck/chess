@@ -189,11 +189,12 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     for (int i = height; i < _pv.size(); ++i) _pv[i] = Move(0);
   } else {
     std::vector<Move> actions(_board.getMoves(_board.getMover()));
-    orderMoves(actions, Sort, _pv[height]);
 
     if (actions.size() == 0 || _board.isDraw100()) {
       result = DRAW;  // stalemate
     } else {
+      orderMoves(actions, Sort, _pv[height]);
+      if (_pv[height] != actions[0]) orderMoves(actions, Sort, ttMove);
       uint8_t opens = 0;
       for (Move& m : actions) {
         Score score;
