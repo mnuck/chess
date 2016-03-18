@@ -34,6 +34,7 @@ class TranspositionTable {
   uint64_t _hits;
 
  private:
+  size_t _maxOccupancy;
   size_t _size;
   MTDFTTNode* _table;
 };
