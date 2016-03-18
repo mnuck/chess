@@ -30,11 +30,9 @@ void Engine::end() {
   LOG(trace) << _szL2 << " cutoff nodes";
 
   LOG(trace) << _szL1 / static_cast<double>(_szL2) << " beta-cutoff ratio";
-  LOG(trace) << _node_expansions / static_cast<double>(diff.count())
-             << " expansions per second";
+  LOG(trace) << _node_expansions / (900 - _time) << " expansions per second";
 
-  LOG(trace) << (_node_expansions + _ttable._hits) /
-                    static_cast<double>(diff.count())
+  LOG(trace) << (_node_expansions + _ttable._hits) / (900 - _time)
              << " expansions per second counting cache hits";
 
   LOG(trace) << _ttable._hits << " cache hits";
