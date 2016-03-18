@@ -174,6 +174,7 @@ void Engine::innerSearch() {
 
 Score Engine::negamax(const Depth depth, Score alpha, Score beta,
                       const Depth height) {
+  const Score alphaParent = alpha;
   if (_search_stop) return 0;
 
   Score result(-CHECKMATE);
