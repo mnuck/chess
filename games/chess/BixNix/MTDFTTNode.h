@@ -10,16 +10,14 @@ namespace BixNix {
 
 class MTDFTTNode {
  public:
-  MTDFTTNode()
-      : _hash(0xFFFFFFFFFFFFFFFFLL),
-        _lower(std::numeric_limits<Score>::min()),
-        _upper(std::numeric_limits<Score>::max()),
-        _depth(0) {}
+  enum class Type : uint8_t { Exact, Lower, Upper };
+  MTDFTTNode() : _hash(0xFFFFFFFFFFFFFFFFLL), _score(0), _depth(0), _move(0) {}
 
   ZobristNumber _hash;
-  Score _lower;
-  Score _upper;
+  Score _score;
+  Type _type;
   Depth _depth;
+  Move::Data _move;
 };
 }
 
