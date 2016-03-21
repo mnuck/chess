@@ -92,6 +92,8 @@ Move Engine::getMove() {
   stopSearch();
   Move move = _best_move;
   _board.applyMove(move);
+  LOG(trace) << "Zobrist: " << _board.getHash();
+  _3table.dumpTable();
   _3table.add(_board.getHash());
 
   LOG(trace) << "engine sending " << move;

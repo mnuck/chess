@@ -1,3 +1,7 @@
+#include <vector>
+
+#include "Logger.h"
+
 #include "ThreefoldTable.h"
 
 namespace BixNix {
@@ -11,5 +15,13 @@ void ThreefoldTable::remove(const ZobristNumber key) {
 
 bool ThreefoldTable::addWouldTrigger(const ZobristNumber key) const {
   return (_table.count(key) > 1);
+}
+
+void ThreefoldTable::dumpTable() const {
+  std::vector<ZobristNumber> vec(_table.begin(), _table.end());
+  std::sort(vec.begin(), vec.end());
+  for (auto& hash : vec) {
+    LOG(trace) << hash;
+  }
 }
 }

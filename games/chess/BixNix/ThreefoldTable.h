@@ -12,6 +12,7 @@ class ThreefoldTable {
   void add(const ZobristNumber key);
   void remove(const ZobristNumber key);
   bool addWouldTrigger(const ZobristNumber key) const;
+  void dumpTable() const;
 
  private:
   std::unordered_multiset<ZobristNumber> _table;
