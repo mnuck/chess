@@ -32,6 +32,7 @@ exceeds predetermined limit.
 ### Move Generation
 - Metadata cached into 32 bit integer, accelerating move application
 - Flag available for "Best Possible Move", triggering immediate move send
+- Lazy inCheck filtering
 
 ### Move Ordering
 - PV Move first, if valid
@@ -59,7 +60,6 @@ http://www.chess2u.com/t7448-komodo-variety-opening-book-komodo-polyglot-book
 
 ### Not Yet Implemented
 - Insufficient Material detection
-- Lazy inCheck filtering
 - Lazy move generation
 - Board::isValidMove(pvMove) to check it prior to move generation
 - Endgame tablebase
