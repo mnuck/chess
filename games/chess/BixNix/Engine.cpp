@@ -45,8 +45,6 @@ void Engine::end() {
   size_t occupied(_ttable.getOccupancy());
   size_t ttableSize(_ttable.getSize());
 
-  LOG(trace) << (long)occupied << " cache slots occupied";
-  LOG(trace) << (long)ttableSize << " cache slots total";
   LOG(trace) << occupied / static_cast<double>(ttableSize) << " occupancy";
 }
 
