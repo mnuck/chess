@@ -1,7 +1,7 @@
 #ifndef __THREEFOLDTABLE_H__
 #define __THREEFOLDTABLE_H__
 
-#include <unordered_set>
+#include <unordered_map>
 
 #include "Enums.h"
 
@@ -14,7 +14,7 @@ class ThreefoldTable {
   bool addWouldTrigger(const ZobristNumber key) const;
 
  private:
-  std::unordered_multiset<ZobristNumber> _table;
+  std::unordered_map<ZobristNumber, uint8_t> _table;
 };
 }
 

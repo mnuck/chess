@@ -2,14 +2,18 @@
 
 namespace BixNix {
 
-void ThreefoldTable::add(const ZobristNumber key) { _table.insert(key); }
+void ThreefoldTable::add(const ZobristNumber key) { _table[key] += 1; }
 
 void ThreefoldTable::remove(const ZobristNumber key) {
   auto it = _table.find(key);
-  if (_table.end() != it) _table.erase(it);
+  if (it == _table.end()) return;
+  it->second -= 1;
+  if (it->second == 0) _table.erase(key);
 }
 
 bool ThreefoldTable::addWouldTrigger(const ZobristNumber key) const {
-  return (_table.count(key) > 1);
+  auto it = _table.find(key);
+  if (it == _table.end()) return false;
+  return it->second > 1;
 }
 }
