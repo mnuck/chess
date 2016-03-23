@@ -128,7 +128,7 @@ void Engine::innerSearch() {
   if (actions.size() == 1) return;
 
   unsigned int depth = 0;
-  for (Move& m : _pv) m = Move(0);
+  for (Move& m : _pv) m = 0;
 
   while (!_search_stop) {
     orderMoves(actions, None, _pv[0]);
@@ -178,78 +178,81 @@ void Engine::innerSearch() {
 
 Score Engine::negamax(const Depth depth, Score alpha, Score beta,
                       const Depth height) {
-  const Score alphaParent = alpha;
   if (_search_stop) return 0;
 
+  Score alphaParent = alpha;
   Score result = std::numeric_limits<Score>::min();
+  Score score = std::numeric_limits<Score>::min();
   Move ttMove = 0;
+  Move& pvMove = _pv[height];
+  Color myColor = _board.getMover();
+  std::vector<Move> actions;
+  uint8_t opens = 0;
 
   if (_ttable.get(_board.getHash(), depth, alpha, beta, result, ttMove))
     return result;
+
   ++_node_expansions;
 
-  Color myColor = _board.getMover();
   if (0 == depth) {
-    result = Evaluate::GetInstance().getEvaluation(_board, _board.getMover());
-  } else if (_board.inCheckmate(_board.getMover())) {
+    result = Evaluate::GetInstance().getEvaluation(_board, myColor);
+    goto NegamaxDone;
+  }
+
+  if (_board.inCheckmate(myColor)) {
     result = -CHECKMATE;
-    for (int i = height; i < _pv.size(); ++i) _pv[i] = Move(0);
-  } else {
-    std::vector<Move> actions(_board.getMoves(_board.getMover()));
-    /*actions.erase(
-        std::remove_if(actions.begin(), actions.end(), [&](Move& move) -> bool {
-          _board.applyMove(move);
-          bool bad = _board.inCheck(myColor);
-          _board.unapplyMove(move);
-          return bad;
-        }),
-        actions.end());*/
+    for (int i = height; i < _pv.size(); ++i) _pv[i] = 0;
+    goto NegamaxDone;
+  }
 
-    if (_board.isDraw100()) {
-      result = DRAW;  // stalemate
-    } else {
-      orderMoves(actions, Sort, _pv[height]);
-      if (actions.size() > 0 && _pv[height] != actions[0]) {
-        orderMoves(actions, Sort, ttMove);
-      }
-      uint8_t opens = 0;
-      for (Move& m : actions) {
-        Score score = std::numeric_limits<Score>::min();
-        if (result >= beta) {
-          _szL1 += opens;
-          _szL2 += 1;
-          break;
-        }
+  if (_board.isDraw100()) {
+    result = DRAW;  // stalemate
+    goto NegamaxDone;
+  }
 
-        _board.applyMove(m);
-        if (!_board.inCheck(myColor)) {
-          if (_3table.addWouldTrigger(_board.getHash())) {
-            score = DRAW;
-          } else {
-            _3table.add(_board.getHash());
-            score = -negamax(depth - 1, -beta, -alpha, height + 1);
-            ++opens;
-            _3table.remove(_board.getHash());
-          }
-        }
-        _board.unapplyMove(m);
-        if (_search_stop) return 0;
+  actions = _board.getMoves(myColor);
+  orderMoves(actions, Sort, pvMove);
+  if (actions.size() > 0 && pvMove != actions[0]) {
+    orderMoves(actions, Sort, ttMove);
+  }
 
-        result = std::max(result, score);
-        if (result > alpha) {
-          ttMove = m;
-          alpha = result;
-          _pv[height] = m;
-          for (int i = 0; i < height; ++i)
-            _pv[height - i - 1] = _board.getPastMove(i);
-        }
+  for (Move& m : actions) {
+    score = std::numeric_limits<Score>::min();
+    if (result >= beta) {
+      _szL1 += opens;
+      _szL2 += 1;
+      goto NegamaxDone;
+    }
+
+    _board.applyMove(m);
+    if (!_board.inCheck(myColor)) {
+      if (_3table.addWouldTrigger(_board.getHash())) {
+        score = DRAW;
+      } else {
+        _3table.add(_board.getHash());
+        score = -negamax(depth - 1, -beta, -alpha, height + 1);
+        ++opens;
+        _3table.remove(_board.getHash());
       }
-      if (0 == opens) {
-        result = DRAW;
-      }
+    }
+    _board.unapplyMove(m);
+    if (_search_stop) return 0;
+
+    result = std::max(result, score);
+    if (result > alpha) {
+      ttMove = m;
+      pvMove = m;
+      alpha = result;
+      for (int i = 0; i < height; ++i)
+        _pv[height - i - 1] = _board.getPastMove(i);
     }
   }
 
+  if (0 == opens) {
+    result = DRAW;
+  }
+
+NegamaxDone:
   _ttable.set(_board.getHash(), depth, alphaParent, beta, result, ttMove);
   return result;
 }
