@@ -46,6 +46,8 @@ void Engine::end() {
   size_t ttableSize(_ttable.getSize());
 
   LOG(trace) << occupied / static_cast<double>(ttableSize) << " occupancy";
+
+  LOG(trace) << _board._ms.maxHead() << " MoveStack Max";
 }
 
 Move Engine::getMove() {
@@ -108,35 +110,35 @@ void Engine::search() {
 
 void Engine::innerSearch() {
   Color myColor = _board.getMover();
-  std::vector<Move> actions = _board.getMoves(myColor);
-  actions.erase(
-      std::remove_if(actions.begin(), actions.end(), [&](Move& move) -> bool {
-        _board.applyMove(move);
-        bool bad = _board.inCheck(myColor);
-        _board.unapplyMove(move);
-        return bad;
-      }),
-      actions.end());
-  if (actions.size() == 0) return;
+  unsigned int depth = 0;
+  _board._ms.newFrame();
+  _board.getMoves(myColor);
+  _board._ms.popTo(std::remove_if(_board._ms.begin(), _board._ms.end(),
+                                  [&](Move& move) -> bool {
+    _board.applyMove(move);
+    bool bad = _board.inCheck(myColor);
+    _board.unapplyMove(move);
+    return bad;
+  }));
+  if (_board._ms.size() == 0) goto InnerSearchDone;
 
-  _best_move = actions[0];
-  if (actions.size() == 1) {
+  _best_move = _board._ms[0];
+  if (_board._ms.size() == 1) {
     _best_move.setBestPossible(true);
     LOG(trace) << "only move: " << _best_move;
   }
   _best_move_ready.notify_all();
-  if (actions.size() == 1) return;
+  if (_board._ms.size() == 1) goto InnerSearchDone;
 
-  unsigned int depth = 0;
   for (Move& m : _pv) m = 0;
 
   while (!_search_stop) {
-    orderMoves(actions, None, _pv[0]);
-    Move bestMoveThisDepth = actions[0];
+    orderMoves(None, _pv[0]);
+    Move bestMoveThisDepth = _board._ms[0];
     Score bestScore = std::numeric_limits<Score>::min();
     Score score = std::numeric_limits<Score>::min();
-    if (depth > (HEIGHTMAX - 32)) return;
-    for (Move& m : actions) {
+    if (depth > (HEIGHTMAX - 32)) goto InnerSearchDone;
+    for (Move& m : _board._ms) {
       _board.applyMove(m);
       if (_3table.addWouldTrigger(_board.getHash())) {
         score = DRAW;
@@ -147,7 +149,7 @@ void Engine::innerSearch() {
       }
 
       _board.unapplyMove(m);
-      if (_search_stop) return;
+      if (_search_stop) goto InnerSearchDone;
       if (-DRAW == score) score = DRAW;  // hate to draw
       if (score > bestScore) {
         bestScore = score;
@@ -164,7 +166,7 @@ void Engine::innerSearch() {
           _best_move = bestMoveThisDepth;
           _best_move.setBestPossible(true);
           _best_move_ready.notify_all();
-          return;
+          goto InnerSearchDone;
         }
       }
     }
@@ -174,6 +176,8 @@ void Engine::innerSearch() {
 
     ++depth;
   }
+InnerSearchDone:
+  _board._ms.popFrame();
 }
 
 Score Engine::negamax(const Depth depth, Score alpha, Score beta,
@@ -188,6 +192,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   Color myColor = _board.getMover();
   std::vector<Move> actions;
   uint8_t opens = 0;
+  bool needToPop = false;
 
   if (_ttable.get(_board.getHash(), depth, alpha, beta, result, ttMove))
     return result;
@@ -210,13 +215,15 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     goto NegamaxDone;
   }
 
-  actions = _board.getMoves(myColor);
-  orderMoves(actions, Sort, pvMove);
-  if (actions.size() > 0 && pvMove != actions[0]) {
-    orderMoves(actions, Sort, ttMove);
+  _board._ms.newFrame();
+  needToPop = true;
+  _board.getMoves(myColor);
+  orderMoves(Sort, pvMove);
+  if (_board._ms.size() > 0 && pvMove != _board._ms[0]) {
+    orderMoves(Sort, ttMove);
   }
 
-  for (Move& m : actions) {
+  for (Move& m : _board._ms) {
     score = std::numeric_limits<Score>::min();
     if (result >= beta) {
       _szL1 += opens;
@@ -240,7 +247,10 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
       }
     }
     _board.unapplyMove(m);
-    if (_search_stop) return 0;
+    if (_search_stop) {
+      result = 0;
+      goto NegamaxDone;
+    }
 
     result = std::max(result, score);
     if (result > alpha) {
@@ -257,17 +267,17 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   }
 
 NegamaxDone:
+  if (needToPop) _board._ms.popFrame();
   _ttable.set(_board.getHash(), depth, alphaParent, beta, result, ttMove);
   return result;
 }
 
-void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
-                        const Move& pvMove) {
+void Engine::orderMoves(const MoveOrderPolicy policy, const Move& pvMove) {
   bool gotPVMove = false;
   if (pvMove != Move(0)) {
-    for (auto& m : moves) {
+    for (auto& m : _board._ms) {
       if (pvMove == m) {
-        std::swap(moves[0], m);
+        std::swap(_board._ms[0], m);
         gotPVMove = true;
         break;
       }
@@ -276,16 +286,16 @@ void Engine::orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
 
   if (None == policy) return;
 
-  for (auto& m : moves)
+  for (auto& m : _board._ms)
     m.score = Evaluate::GetInstance().getEvaluation(m, _board.getMover());
 
   size_t offset = gotPVMove ? 1 : 0;
   if (Heap == policy) {
-    std::make_heap(moves.begin() + offset, moves.end(),
+    std::make_heap(_board._ms.begin() + offset, _board._ms.end(),
                    [&](const Move& a, const Move& b)
                        -> bool { return a.score < b.score; });
   } else {  // Sort == policy
-    std::sort(moves.begin() + offset, moves.end(),
+    std::sort(_board._ms.begin() + offset, _board._ms.end(),
               [&](const Move& a, const Move& b)
                   -> bool { return a.score > b.score; });
   }

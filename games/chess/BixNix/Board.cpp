@@ -478,11 +478,10 @@ bool Board::isUnsafe(Square square, Color color) const {
   return false;
 }
 
-std::vector<Move> Board::getMoves(
-    BitBoard movers, std::function<BitBoard(BitBoard)> targetGenerator,
-    Piece movingPiece, bool doublePushing, bool enPassanting) const {
-  std::vector<Move> result;
-  result.reserve(400);
+void Board::getMoves(BitBoard movers,
+                     std::function<BitBoard(BitBoard)> targetGenerator,
+                     Piece movingPiece, bool doublePushing,
+                     bool enPassanting) const {
   while (0LL != movers) {
     const Square source(__builtin_ffsll(movers) - 1);
     BitBoard sourceBoard(1LL << source);
@@ -519,50 +518,47 @@ std::vector<Move> Board::getMoves(
 
       if (Pawn == movingPiece) {
         if (targetBoard & 0xFF000000000000FFLL) {
-          result.emplace_back(Move(source, target, Pawn, capturedPiece, Queen,
-                                   true, capturing, false, false, -1, false,
-                                   false, dirtyingSource, dirtyingTarget));
-          result.emplace_back(Move(source, target, Pawn, capturedPiece, Rook,
-                                   true, capturing, false, false, -1, false,
-                                   false, dirtyingSource, dirtyingTarget));
-          result.emplace_back(Move(source, target, Pawn, capturedPiece, Bishop,
-                                   true, capturing, false, false, -1, false,
-                                   false, dirtyingSource, dirtyingTarget));
-          result.emplace_back(Move(source, target, Pawn, capturedPiece, Knight,
-                                   true, capturing, false, false, -1, false,
-                                   false, dirtyingSource, dirtyingTarget));
+          _ms.push(Move(source, target, Pawn, capturedPiece, Queen, true,
+                        capturing, false, false, -1, false, false,
+                        dirtyingSource, dirtyingTarget));
+          _ms.push(Move(source, target, Pawn, capturedPiece, Rook, true,
+                        capturing, false, false, -1, false, false,
+                        dirtyingSource, dirtyingTarget));
+          _ms.push(Move(source, target, Pawn, capturedPiece, Bishop, true,
+                        capturing, false, false, -1, false, false,
+                        dirtyingSource, dirtyingTarget));
+          _ms.push(Move(source, target, Pawn, capturedPiece, Knight, true,
+                        capturing, false, false, -1, false, false,
+                        dirtyingSource, dirtyingTarget));
         } else {
           int enPassantFile = -1;
           if (doublePushing) {
             enPassantFile = source % 8;
           }
-          result.emplace_back(Move(source, target, Pawn, capturedPiece, Pawn,
-                                   false, capturing, doublePushing,
-                                   enPassanting, enPassantFile, false, false,
-                                   dirtyingSource, dirtyingTarget));
+          _ms.push(Move(source, target, Pawn, capturedPiece, Pawn, false,
+                        capturing, doublePushing, enPassanting, enPassantFile,
+                        false, false, dirtyingSource, dirtyingTarget));
         }
 
       } else {
-        result.emplace_back(Move(source, target, movingPiece, capturedPiece,
-                                 Pawn, false, capturing, false, false, -1,
-                                 false, false, dirtyingSource, dirtyingTarget));
+        _ms.push(Move(source, target, movingPiece, capturedPiece, Pawn, false,
+                      capturing, false, false, -1, false, false, dirtyingSource,
+                      dirtyingTarget));
       }
     }
   }
-
-  return result;
 }
 
-std::vector<Move> Board::getKingMoves(const Color color) const {
+void Board::getKingMoves(const Color color) const {
   BitBoard movers = _pieces[King] & _colors[color];
   auto targetGenerator = [&](BitBoard mover) -> BitBoard {
     return Kings::GetInstance().getAttacksFrom(mover, _colors[color]);
   };
 
-  return getMoves(movers, targetGenerator, King);
+  getMoves(movers, targetGenerator, King);
 }
 
-std::vector<Move> Board::getQueenMoves(const Color color) const {
+void Board::getQueenMoves(const Color color) const {
   BitBoard movers = _pieces[Queen] & _colors[color];
   Color otherColor = Color(1 - color);
 
@@ -573,10 +569,10 @@ std::vector<Move> Board::getQueenMoves(const Color color) const {
                                                  _colors[color]);
   };
 
-  return getMoves(movers, targetGenerator, Queen);
+  getMoves(movers, targetGenerator, Queen);
 }
 
-std::vector<Move> Board::getBishopMoves(const Color color) const {
+void Board::getBishopMoves(const Color color) const {
   BitBoard movers = _pieces[Bishop] & _colors[color];
   Color otherColor = Color(1 - color);
 
@@ -586,33 +582,32 @@ std::vector<Move> Board::getBishopMoves(const Color color) const {
     ;
   };
 
-  return getMoves(movers, targetGenerator, Bishop);
+  getMoves(movers, targetGenerator, Bishop);
 }
 
-std::vector<Move> Board::getKnightMoves(const Color color) const {
+void Board::getKnightMoves(const Color color) const {
   BitBoard movers = _pieces[Knight] & _colors[color];
 
   auto targetGenerator = [&](BitBoard mover) -> BitBoard {
     return Knights::GetInstance().getAttacksFrom(mover, _colors[color]);
   };
 
-  return getMoves(movers, targetGenerator, Knight);
+  getMoves(movers, targetGenerator, Knight);
 }
 
-std::vector<Move> Board::getRookMoves(const Color color) const {
+void Board::getRookMoves(const Color color) const {
   BitBoard movers = _pieces[Rook] & _colors[color];
   Color otherColor = Color(1 - color);
 
   auto targetGenerator = [&](BitBoard mover) -> BitBoard {
     return Rooks::GetInstance().getAttacksFrom(mover, _colors[otherColor],
                                                _colors[color]);
-    ;
   };
 
-  return getMoves(movers, targetGenerator, Rook);
+  getMoves(movers, targetGenerator, Rook);
 }
 
-std::vector<Move> Board::getPawnMoves(const Color color) const {
+void Board::getPawnMoves(const Color color) const {
   BitBoard movers = _pieces[Pawn] & _colors[color];
   Color otherColor = Color(1 - color);
   BitBoard targets = _colors[otherColor];
@@ -629,10 +624,10 @@ std::vector<Move> Board::getPawnMoves(const Color color) const {
     return Pawns::GetInstance().getMovesFrom(mover, blockers, color);
   };
 
-  return getMoves(movers, targetGenerator, Pawn);
+  getMoves(movers, targetGenerator, Pawn);
 }
 
-std::vector<Move> Board::getPawnAttacks(const Color color) const {
+void Board::getPawnAttacks(const Color color) const {
   BitBoard movers = _pieces[Pawn] & _colors[color];
   Color otherColor = Color(1 - color);
   BitBoard targets = _colors[otherColor];
@@ -648,12 +643,11 @@ std::vector<Move> Board::getPawnAttacks(const Color color) const {
     return Pawns::GetInstance().getAttacksFrom(mover, targets, color);
   };
 
-  return getMoves(movers, targetGenerator, Pawn);
+  getMoves(movers, targetGenerator, Pawn);
 }
 
-std::vector<Move> Board::getPawnEnPassants(const Color color) const {
-  std::vector<Move> empty;
-  if (-1 == _epAvailable) return empty;
+void Board::getPawnEnPassants(const Color color) const {
+  if (-1 == _epAvailable) return;
 
   BitBoard movers(_pieces[Pawn] & _colors[color]);
   Square epSquare(40 + _epAvailable);
@@ -670,10 +664,10 @@ std::vector<Move> Board::getPawnEnPassants(const Color color) const {
     return Pawns::GetInstance().getAttacksFrom(mover, target, color);
   };
 
-  return getMoves(movers, targetGenerator, Pawn, false, true);
+  getMoves(movers, targetGenerator, Pawn, false, true);
 }
 
-std::vector<Move> Board::getPawnDoublePushes(const Color color) const {
+void Board::getPawnDoublePushes(const Color color) const {
   BitBoard movers = _pieces[Pawn] & _colors[color];
   Color otherColor = Color(1 - color);
 
@@ -682,18 +676,16 @@ std::vector<Move> Board::getPawnDoublePushes(const Color color) const {
     return Pawns::GetInstance().getDoublePushesFrom(mover, blockers, color);
   };
 
-  return getMoves(movers, targetGenerator, Pawn, true, false);
+  getMoves(movers, targetGenerator, Pawn, true, false);
 }
 
-std::vector<Move> Board::getCastlingMoves(const Color color) const {
-  std::vector<Move> result;
-
+void Board::getCastlingMoves(const Color color) const {
   if (White == color) {
     if (WKingMoved() || (WKRookMoved() && WQRookMoved()))
-      return result;  // nobody to castle with
+      return;  // nobody to castle with
 
     Square kingLoc(3);
-    if (isUnsafe(kingLoc, White)) return result;
+    if (isUnsafe(kingLoc, White)) return;
 
     const BitBoard unsafe(getUnsafe(color));
     const BitBoard blocked(_colors[Black] | _colors[White]);
@@ -701,27 +693,25 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const {
     if (!WKRookMoved()) {
       const BitBoard path(6LL);
       if ((path & noGo) == 0LL) {
-        result.emplace_back(Move(kingLoc, kingLoc - 2, King, Pawn, Pawn, false,
-                                 false, false, false, -1, true, true, true,
-                                 false));
+        _ms.push(Move(kingLoc, kingLoc - 2, King, Pawn, Pawn, false, false,
+                      false, false, -1, true, true, true, false));
       }
     }
     if (!WQRookMoved()) {
       const BitBoard rookPath(112LL);
       const BitBoard kingPath(48LL);
       if ((kingPath & noGo) == 0LL && (rookPath & blocked) == 0LL) {
-        result.emplace_back(Move(kingLoc, kingLoc + 2, King, Pawn, Pawn, false,
-                                 false, false, false, -1, true, false, true,
-                                 false));
+        _ms.push(Move(kingLoc, kingLoc + 2, King, Pawn, Pawn, false, false,
+                      false, false, -1, true, false, true, false));
       }
     }
   } else  // Black == color
   {
     if (BKingMoved() || (BKRookMoved() && BQRookMoved()))
-      return result;  // nobody  to castle with
+      return;  // nobody  to castle with
 
     Square kingLoc(59);
-    if (isUnsafe(kingLoc, Black)) return result;
+    if (isUnsafe(kingLoc, Black)) return;
 
     const BitBoard unsafe(getUnsafe(color));
     const BitBoard blocked(_colors[Black] | _colors[White]);
@@ -729,23 +719,19 @@ std::vector<Move> Board::getCastlingMoves(const Color color) const {
     if (!BKRookMoved()) {
       const BitBoard path(6LL << 56);
       if ((path & noGo) == 0LL) {
-        result.emplace_back(Move(kingLoc, kingLoc - 2, King, Pawn, Pawn, false,
-                                 false, false, false, -1, true, true, true,
-                                 false));
+        _ms.push(Move(kingLoc, kingLoc - 2, King, Pawn, Pawn, false, false,
+                      false, false, -1, true, true, true, false));
       }
     }
     if (!BQRookMoved()) {
       const BitBoard rookPath(112LL << 56);
       const BitBoard kingPath(48LL << 56);
       if ((kingPath & noGo) == 0LL && (rookPath & blocked) == 0LL) {
-        result.emplace_back(Move(kingLoc, kingLoc + 2, King, Pawn, Pawn, false,
-                                 false, false, false, -1, true, false, true,
-                                 false));
+        _ms.push(Move(kingLoc, kingLoc + 2, King, Pawn, Pawn, false, false,
+                      false, false, -1, true, false, true, false));
       }
     }
   }
-
-  return result;
 }
 
 bool Board::inCheck(const Color color) const {
@@ -766,8 +752,11 @@ bool Board::inCheckmate(const Color color) {
   }
 
   if (inCheck(color)) {
-    auto moves = getMoves(color, false);
-    if (moves.size() == 0) {
+    _ms.newFrame();
+    getMoves(color, false);
+    bool noMoves = (_ms.size() == 0);
+    _ms.popFrame();
+    if (noMoves) {
       _terminalState = (White == color) ? BlackWin : WhiteWin;
       return true;
     }
@@ -777,50 +766,39 @@ bool Board::inCheckmate(const Color color) {
 
 std::vector<Move> Board::getMoves(const Color color,
                                   const bool checkCheckmate) {
-  std::vector<Move> result;
+  std::vector<Move> empty;
   if (_terminalState != Running) {
-    return result;
+    return empty;
   }
 
   if (checkCheckmate && inCheckmate(color)) {
     _terminalState = (White == color) ? BlackWin : WhiteWin;
-    return result;
+    return empty;
   }
 
-  result.reserve(100);
-  std::vector<Move> castles(getCastlingMoves(color));
-  std::vector<Move> kings(getKingMoves(color));
-  std::vector<Move> queens(getQueenMoves(color));
-  std::vector<Move> bishops(getBishopMoves(color));
-  std::vector<Move> knights(getKnightMoves(color));
-  std::vector<Move> rooks(getRookMoves(color));
-  std::vector<Move> pawnsMove(getPawnMoves(color));
-  std::vector<Move> pawnsDP(getPawnDoublePushes(color));
-  std::vector<Move> pawnsAttk(getPawnAttacks(color));
-  std::vector<Move> pawnsEP(getPawnEnPassants(color));
-
-  result.insert(result.end(), castles.begin(), castles.end());
-  result.insert(result.end(), queens.begin(), queens.end());
-  result.insert(result.end(), rooks.begin(), rooks.end());
-  result.insert(result.end(), bishops.begin(), bishops.end());
-  result.insert(result.end(), knights.begin(), knights.end());
-  result.insert(result.end(), kings.begin(), kings.end());
-  result.insert(result.end(), pawnsMove.begin(), pawnsMove.end());
-  result.insert(result.end(), pawnsDP.begin(), pawnsDP.end());
-  result.insert(result.end(), pawnsAttk.begin(), pawnsAttk.end());
-  result.insert(result.end(), pawnsEP.begin(), pawnsEP.end());
+  getCastlingMoves(color);
+  getKingMoves(color);
+  getQueenMoves(color);
+  getBishopMoves(color);
+  getKnightMoves(color);
+  getRookMoves(color);
+  getPawnMoves(color);
+  getPawnDoublePushes(color);
+  getPawnAttacks(color);
+  getPawnEnPassants(color);
 
   if (!checkCheckmate) {
-    result.erase(std::remove_if(result.begin(), result.end(),
-                                [this, color](Move& move) -> bool {
-                   applyMove(move);
-                   bool bad = inCheck(color);
-                   unapplyMove(move);
-                   return bad;
-                 }),
-                 result.end());
+    _ms.popTo(std::remove_if(_ms.begin(), _ms.end(),
+                             [this, color](Move& move) -> bool {
+      applyMove(move);
+      bool bad = inCheck(color);
+      unapplyMove(move);
+      return bad;
+    }));
   }
-  if (result.size() == 0) _terminalState = Draw;
+  if (_ms.size() == 0) _terminalState = Draw;
+
+  std::vector<Move> result(_ms.begin(), _ms.end());
 
   return result;
 }
