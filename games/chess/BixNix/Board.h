@@ -13,6 +13,7 @@
 #include "BitBoard.h"
 #include "BNStack.h"
 #include "Enums.h"
+#include "FramedStack.h"
 #include "Move.h"
 
 namespace BixNix {
@@ -22,6 +23,8 @@ class Board {
   friend std::ostream& operator<<(std::ostream& lhs, const Board& rhs);
   friend class Evaluate;
   friend ZobristNumber toKey(const Board& board);
+
+  typedef FramedStack<Move, 2000, 200> MoveStack;
 
   Board();
   Board(const Board& that);
@@ -56,25 +59,27 @@ class Board {
 
   Move getPastMove(int i);
 
+  mutable MoveStack _ms;
+
  private:
   BitBoard getUnsafe(Color color) const;
   bool isUnsafe(Square square, Color color) const;
 
-  std::vector<Move> getKingMoves(const Color color) const;
-  std::vector<Move> getQueenMoves(const Color color) const;
-  std::vector<Move> getBishopMoves(const Color color) const;
-  std::vector<Move> getKnightMoves(const Color color) const;
-  std::vector<Move> getRookMoves(const Color color) const;
-  std::vector<Move> getPawnMoves(const Color color) const;
-  std::vector<Move> getPawnDoublePushes(const Color color) const;
-  std::vector<Move> getPawnAttacks(const Color color) const;
-  std::vector<Move> getPawnEnPassants(const Color color) const;
-  std::vector<Move> getCastlingMoves(const Color color) const;
+  void getKingMoves(const Color color) const;
+  void getQueenMoves(const Color color) const;
+  void getBishopMoves(const Color color) const;
+  void getKnightMoves(const Color color) const;
+  void getRookMoves(const Color color) const;
+  void getPawnMoves(const Color color) const;
+  void getPawnDoublePushes(const Color color) const;
+  void getPawnAttacks(const Color color) const;
+  void getPawnEnPassants(const Color color) const;
+  void getCastlingMoves(const Color color) const;
 
-  std::vector<Move> getMoves(BitBoard movers,
-                             std::function<BitBoard(BitBoard)> targetGenerator,
-                             Piece movingPiece, bool doublePushing = false,
-                             bool enPassanting = false) const;
+  void getMoves(BitBoard movers,
+                std::function<BitBoard(BitBoard)> targetGenerator,
+                Piece movingPiece, bool doublePushing = false,
+                bool enPassanting = false) const;
 
   static bool parse(const char square, Color& color, Piece& piece);
 

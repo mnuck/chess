@@ -38,8 +38,7 @@ class Engine {
                 Score beta = CHECKMATE, const Depth height = 1);
 
   enum MoveOrderPolicy { None, Heap, Sort };
-  void orderMoves(std::vector<Move>& moves, const MoveOrderPolicy policy,
-                  const Move& pvMove);
+  void orderMoves(const MoveOrderPolicy policy, const Move& pvMove);
 
   void startSearch();
   void stopSearch();
