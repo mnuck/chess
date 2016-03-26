@@ -13,6 +13,7 @@ exceeds predetermined limit.
 
 ### Transposition Table
 - Store Score, Depth, Move, Node Type (exact, upper bound, lower bound)
+- Stored in a large array used as a hash table
 - Sized via the frown test to achieve an acceptable collision rate
 
 ### Zobrist Hashing
@@ -28,11 +29,16 @@ exceeds predetermined limit.
 - Stalemate detection
 - 100 ply capture / pawn move detection
 - Threefold Board State Repetition detection
+- Opponent-initiated draws valued same as being checkmated. Some of y'all
+  lack threefold detection and blunder your way into a tie. If I refuse to
+  let myself get into a situation where you have the power to make that
+  blunder, I get fewer ties.
 
 ### Move Generation
 - Metadata cached into 32 bit integer, accelerating move application
 - Flag available for "Best Possible Move", triggering immediate move send
 - Lazy inCheck filtering
+- Moves stored in custom "Framed Stack" data structure to maximize locality
 
 ### Move Ordering
 - PV Move first, if valid
@@ -42,7 +48,7 @@ exceeds predetermined limit.
 - Finally quiet moves, ordered by Piece Square differential
 
 ### Late Move Reductions
-Reduce depth of search of quiet moves late in the move order.
+- Reduce depth of search of quiet moves late in the move order.
 
 ### Opening Book
 http://www.chess2u.com/t7448-komodo-variety-opening-book-komodo-polyglot-book
@@ -67,3 +73,4 @@ http://www.chess2u.com/t7448-komodo-variety-opening-book-komodo-polyglot-book
 ### Implemented Then Discarded
 - History Table, didn't help
 - Quiescent Search, underperformed
+- Pondering, y'all are too unpredictable for pondering to work
