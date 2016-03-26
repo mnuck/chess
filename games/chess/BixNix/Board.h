@@ -23,7 +23,7 @@ class Board {
   friend class Evaluate;
   friend ZobristNumber toKey(const Board& board);
 
-  typedef FramedStack<Move, 2000, 200> MoveStack;
+  typedef FramedStack<Move, 750, 100> MoveStack;
 
   Board();
   Board(const Board& that);
