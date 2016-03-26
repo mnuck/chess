@@ -8,7 +8,6 @@
 #include <array>
 #include <iostream>
 #include <functional>
-#include <vector>
 
 #include "BitBoard.h"
 #include "BNStack.h"
@@ -35,8 +34,7 @@ class Board {
   bool operator!=(const Board& rhs) const;
   void debug() const;
 
-  std::vector<Move> getMoves(const Color color,
-                             const bool checkCheckmate = true);
+  void getMoves(const Color color, const bool checkCheckmate = true);
 
   void applyExternalMove(const Move extMove);
 
