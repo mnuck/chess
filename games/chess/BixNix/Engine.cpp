@@ -190,7 +190,6 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   Move ttMove = 0;
   Move& pvMove = _pv[height];
   Color myColor = _board.getMover();
-  std::vector<Move> actions;
   uint8_t opens = 0;
   bool needToPop = false;
 

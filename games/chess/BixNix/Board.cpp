@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <fstream>
-#include <vector>
 
 #include "Board.h"
 #include "Enums.h"
@@ -764,16 +763,14 @@ bool Board::inCheckmate(const Color color) {
   return false;
 }
 
-std::vector<Move> Board::getMoves(const Color color,
-                                  const bool checkCheckmate) {
-  std::vector<Move> empty;
+void Board::getMoves(const Color color, const bool checkCheckmate) {
   if (_terminalState != Running) {
-    return empty;
+    return;
   }
 
   if (checkCheckmate && inCheckmate(color)) {
     _terminalState = (White == color) ? BlackWin : WhiteWin;
-    return empty;
+    return;
   }
 
   getCastlingMoves(color);
@@ -797,10 +794,6 @@ std::vector<Move> Board::getMoves(const Color color,
     }));
   }
   if (_ms.size() == 0) _terminalState = Draw;
-
-  std::vector<Move> result(_ms.begin(), _ms.end());
-
-  return result;
 }
 
 bool Board::isDraw100() {
@@ -833,12 +826,14 @@ uint64_t Board::perft(const int depth) {
 
   if (0 == depth) return 1;
 
-  auto moves(getMoves(_toMove));
-  for (const Move& m : moves) {
+  _ms.newFrame();
+  getMoves(_toMove);
+  for (const Move& m : _ms) {
     applyMove(m);
     result += perft(depth - 1);
     unapplyMove(m);
   }
+  _ms.popFrame();
 
   return result;
 }
