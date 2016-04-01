@@ -8,7 +8,7 @@ void ThreefoldTable::remove(const ZobristNumber key) {
   auto it = _table.find(key);
   if (it == _table.end()) return;
   it->second -= 1;
-  if (it->second == 0) _table.erase(key);
+  if (it->second == 0) _table.erase(it);
 }
 
 bool ThreefoldTable::addWouldTrigger(const ZobristNumber key) const {
