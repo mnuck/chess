@@ -135,7 +135,7 @@ void Engine::innerSearch() {
   while (!_search_stop) {
     orderMoves(None, _pv[0]);
     Move bestMoveThisDepth = _board._ms[0];
-    Score bestScore = std::numeric_limits<Score>::min();
+    Score bestScore = std::numeric_limits<Score>::max();
     Score score = std::numeric_limits<Score>::min();
     if (depth > (HEIGHTMAX - 32)) goto InnerSearchDone;
     for (Move& m : _board._ms) {
@@ -151,7 +151,7 @@ void Engine::innerSearch() {
       _board.unapplyMove(m);
       if (_search_stop) goto InnerSearchDone;
       if (-DRAW == score) score = DRAW;  // hate to draw
-      if (score > bestScore) {
+      if (score < bestScore) {
         bestScore = score;
         _pv[0] = m;
         bestMoveThisDepth = m;
