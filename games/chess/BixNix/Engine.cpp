@@ -234,7 +234,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     if (!_board.inCheck(myColor)) {
       if (_3table.addWouldTrigger(_board.getHash())) {
         // assume my opponent WANTS to tie
-        if (height % 2 == 0)
+        if (height % 2 == 1)
           score = DRAW;
         else
           score = CHECKMATE;
