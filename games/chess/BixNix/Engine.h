@@ -37,8 +37,7 @@ class Engine {
   Score negamax(const Depth depth, Score alpha = -CHECKMATE,
                 Score beta = CHECKMATE, const Depth height = 1);
 
-  enum MoveOrderPolicy { None, Heap, Sort };
-  void orderMoves(const MoveOrderPolicy policy, const Move& pvMove);
+  void emplaceFirstMove(const Move& pvMove, const Move& ttMove);
 
   void startSearch();
   void stopSearch();
