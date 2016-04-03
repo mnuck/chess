@@ -95,7 +95,6 @@ Move Engine::getMove() {
   _3table.add(_board.getHash());
 
   LOG(trace) << "engine sending " << move;
-  LOG(trace) << "board\n" << _board;
 
   return move;
 }
@@ -352,6 +351,5 @@ void Engine::reportMove(Move move, float time) {
 
   _board.applyExternalMove(move);
   _3table.add(_board.getHash());
-  LOG(trace) << "board\n" << _board;
 }
 }
