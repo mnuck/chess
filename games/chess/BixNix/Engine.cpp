@@ -199,6 +199,12 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
 
   ++_node_expansions;
 
+  if (result >= beta) {
+    _szL1 += opens;
+    _szL2 += 1;
+    goto NegamaxDone;
+  }
+
   if (0 == depth) {
     result = Evaluate::GetInstance().getEvaluation(_board, myColor);
     goto NegamaxDone;
@@ -228,11 +234,6 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   for (auto it = _board._ms.begin(); it != _board._ms.end(); ++it) {
     auto& m = *it;
     score = std::numeric_limits<Score>::min();
-    if (result >= beta) {
-      _szL1 += opens;
-      _szL2 += 1;
-      goto NegamaxDone;
-    }
 
     _board.applyMove(m);
     if (!_board.inCheck(myColor)) {
@@ -256,6 +257,11 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     }
 
     result = std::max(result, score);
+    if (result >= beta) {
+      _szL1 += opens;
+      _szL2 += 1;
+      goto NegamaxDone;
+    }
     if (result > alpha) {
       ttMove = m;
       pvMove = m;
