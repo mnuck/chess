@@ -133,7 +133,8 @@ void Engine::innerSearch() {
   for (Move& m : _pv) m = 0;
 
   while (!_search_stop) {
-    orderMoves(None, _pv[0]);
+    emplaceFirstMove(_pv[0], Move(0));
+    // orderMoves(None, _pv[0]);
     Move bestMoveThisDepth = _board._ms[0];
     Score bestScore = std::numeric_limits<Score>::min();
     Score score = std::numeric_limits<Score>::min();
@@ -192,6 +193,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   Color myColor = _board.getMover();
   uint8_t opens = 0;
   bool needToPop = false;
+  bool firstMove = true;
 
   if (_ttable.get(_board.getHash(), depth, alpha, beta, result, ttMove))
     return result;
@@ -217,12 +219,15 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   _board._ms.newFrame();
   needToPop = true;
   _board.getMoves(myColor);
-  orderMoves(Sort, pvMove);
-  if (_board._ms.size() > 0 && pvMove != _board._ms[0]) {
-    orderMoves(Sort, ttMove);
-  }
+  // orderMoves(Sort, pvMove);
+  // if (_board._ms.size() > 0 && pvMove != _board._ms[0]) {
+  //  orderMoves(Sort, ttMove);
+  //}
 
-  for (Move& m : _board._ms) {
+  emplaceFirstMove(pvMove, ttMove);
+
+  for (auto it = _board._ms.begin(); it != _board._ms.end(); ++it) {
+    auto& m = *it;
     score = std::numeric_limits<Score>::min();
     if (result >= beta) {
       _szL1 += opens;
@@ -259,6 +264,12 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
       for (int i = 0; i < height; ++i)
         _pv[height - i - 1] = _board.getPastMove(i);
     }
+    if (firstMove) {
+      firstMove = false;
+      std::sort(_board._ms.begin() + 1, _board._ms.end(),
+                [&](const Move& a, const Move& b)
+                    -> bool { return a.score > b.score; });
+    }
   }
 
   if (0 == opens) {
@@ -271,33 +282,25 @@ NegamaxDone:
   return result;
 }
 
-void Engine::orderMoves(const MoveOrderPolicy policy, const Move& pvMove) {
-  bool gotPVMove = false;
-  if (pvMove != Move(0)) {
-    for (auto& m : _board._ms) {
-      if (pvMove == m) {
-        std::swap(_board._ms[0], m);
-        gotPVMove = true;
-        break;
-      }
-    }
+void Engine::emplaceFirstMove(const Move& pvMove, const Move& ttMove) {
+  auto begin = _board._ms.begin();
+  auto end = _board._ms.end();
+  auto pvIterator = end;
+  auto ttIterator = end;
+  auto bestIterator = begin;
+  for (auto it = begin; it != end; ++it) {
+    (*it).score = Evaluate::GetInstance().getEvaluation(*it, _board.getMover());
+    if ((*it).score > (*bestIterator).score) bestIterator = it;
+    if (pvMove == *it) pvIterator = it;
+    if (ttMove == *it) ttIterator = it;
   }
 
-  if (None == policy) return;
-
-  for (auto& m : _board._ms)
-    m.score = Evaluate::GetInstance().getEvaluation(m, _board.getMover());
-
-  size_t offset = gotPVMove ? 1 : 0;
-  if (Heap == policy) {
-    std::make_heap(_board._ms.begin() + offset, _board._ms.end(),
-                   [&](const Move& a, const Move& b)
-                       -> bool { return a.score < b.score; });
-  } else {  // Sort == policy
-    std::sort(_board._ms.begin() + offset, _board._ms.end(),
-              [&](const Move& a, const Move& b)
-                  -> bool { return a.score > b.score; });
-  }
+  if (pvIterator != end)
+    std::swap(*begin, *pvIterator);
+  else if (pvIterator != _board._ms.end())
+    std::swap(*begin, *ttIterator);
+  else
+    std::swap(*begin, *bestIterator);
 }
 
 Engine::Engine()
