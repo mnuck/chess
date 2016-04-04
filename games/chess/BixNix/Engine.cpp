@@ -133,7 +133,6 @@ void Engine::innerSearch() {
 
   while (!_search_stop) {
     emplaceFirstMove(_pv[0], Move(0));
-    // orderMoves(None, _pv[0]);
     Move bestMoveThisDepth = _board._ms[0];
     Score bestScore = std::numeric_limits<Score>::min();
     Score score = std::numeric_limits<Score>::min();
@@ -224,10 +223,6 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
   _board._ms.newFrame();
   needToPop = true;
   _board.getMoves(myColor);
-  // orderMoves(Sort, pvMove);
-  // if (_board._ms.size() > 0 && pvMove != _board._ms[0]) {
-  //  orderMoves(Sort, ttMove);
-  //}
 
   emplaceFirstMove(pvMove, ttMove);
 
