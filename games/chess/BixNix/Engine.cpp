@@ -137,8 +137,14 @@ void Engine::innerSearch() {
     Score bestScore = std::numeric_limits<Score>::min();
     Score score = std::numeric_limits<Score>::min();
     if (depth > (HEIGHTMAX - 32)) goto InnerSearchDone;
+    LOG(trace) << "********* DEPTH " << depth;
+    LOG(trace) << "Threefold Table";
+    for (auto it : _3table._table) {
+      LOG(trace) << it.first << ": " << (int)it.second;
+    }
     for (Move& m : _board._ms) {
       _board.applyMove(m);
+      LOG(trace) << "hash: " << _board.getHash();
       if (_3table.addWouldTrigger(_board.getHash())) {
         score = DRAW;
       } else {
@@ -148,6 +154,9 @@ void Engine::innerSearch() {
       }
 
       _board.unapplyMove(m);
+
+      LOG(trace) << m << ": " << score;
+
       if (_search_stop) goto InnerSearchDone;
       if (-DRAW == score) score = DRAW;  // hate to draw
       if (score > bestScore) {
@@ -234,7 +243,7 @@ Score Engine::negamax(const Depth depth, Score alpha, Score beta,
     if (!_board.inCheck(myColor)) {
       if (_3table.addWouldTrigger(_board.getHash())) {
         // assume my opponent WANTS to tie
-        if (height % 2 == 1)
+        if (height % 2 == 0)
           score = DRAW;
         else
           score = CHECKMATE;
@@ -345,6 +354,7 @@ void Engine::init(Color color, float time) {
   _start_time = std::chrono::system_clock::now();
 
   _board = Board::initial();
+  _3table.add(_board.getHash());
 }
 
 void Engine::reportMove(Move move, float time) {
@@ -352,5 +362,6 @@ void Engine::reportMove(Move move, float time) {
 
   _board.applyExternalMove(move);
   _3table.add(_board.getHash());
+  LOG(trace) << "board:\n" << _board;
 }
 }

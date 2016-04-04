@@ -13,7 +13,6 @@ class ThreefoldTable {
   void remove(const ZobristNumber key);
   bool addWouldTrigger(const ZobristNumber key) const;
 
- private:
   std::unordered_map<ZobristNumber, uint8_t> _table;
 };
 }
