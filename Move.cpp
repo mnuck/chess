@@ -5,38 +5,13 @@
 namespace BixNix
 {
 
-Move::Move(Square source, Square target):
-    _data(0)
-{
-    setSource(source);
-    setTarget(target);
-}
-
 Move::Move(Square source, Square target, Piece piece):
     _data(0)
 {
-    setSource(source);
-    setTarget(target);
-    setPromotionPiece(piece);
-    setPromoting(true);
-}
-
-Move::Move(Square source, Square target, bool capturing):
-    _data(0)
-{
-    setSource(source);
-    setTarget(target);
-    setCapturing(capturing);
-}
-
-Move::Move(Square source, Square target, Piece piece, bool capturing):
-    _data(0)
-{
-    setSource(source);
-    setTarget(target);
-    setPromotionPiece(piece);
-    setPromoting(true);
-    setCapturing(capturing);
+    _data |= SOURCE_MASK & uint32_t(source);
+    _data |= (TARGET_MASK & (uint32_t(target) << 6));
+    _data |= (PROMO_TYPE_MASK & (uint32_t(piece) << 12));
+    _data |= PROMO_FLAG_MASK;
 }
 
 Move::Move(
@@ -51,108 +26,42 @@ Move::Move(
         bool   enPassanting,
         int    enPassantTargetFile,
         bool   castling,
-        bool   castlingDirection):
+        bool   castlingDirection,
+        bool   sourceDirtied,
+        bool   targetDirtied):
     _data(0)
 {
-    setSource(source);
-    setTarget(target);
-    setMovingPiece(movingPiece);
-    setCapturedPiece(capturedPiece);
-    setPromotionPiece(promotionPiece);
-    setPromoting(promoting);
-    setCapturing(capturing);
-    setDoublePushing(doublePushing);
-    setEnPassanting(enPassanting);
-    setEnPassantTargetFile(enPassantTargetFile);
-    setCastling(castling);
-    setCastlingDirection(castlingDirection);
-}
+    _data |= SOURCE_MASK & uint32_t(source);
+    _data |= (TARGET_MASK & (uint32_t(target) << 6));
+    _data |= (PIECE_TYPE_MASK & (uint32_t(movingPiece) << 16));
+    _data |= (TARGET_TYPE_MASK & (uint32_t(capturedPiece) << 19));
+    _data |= (PROMO_TYPE_MASK & (uint32_t(promotionPiece) << 12));
+    _data |= (EP_FILE_MASK & (uint32_t(enPassantTargetFile) << 24));
 
-
-void Move::setSource(Square s) 
-{ 
-    _data &= ~SOURCE_MASK;
-    _data |= SOURCE_MASK & uint32_t(s);
-}
-
-void Move::setTarget(Square t)
-{ 
-    _data &= ~TARGET_MASK;
-    _data |= (TARGET_MASK & (uint32_t(t) << 6));
-}
-
-void Move::setMovingPiece(Piece p)
-{ 
-    _data &= ~PIECE_TYPE_MASK;
-    _data |= (PIECE_TYPE_MASK & (uint32_t(p) << 16));
-}
-
-void Move::setCapturedPiece(Piece p)
-{ 
-    _data &= ~TARGET_TYPE_MASK;
-    _data |= (TARGET_TYPE_MASK & (uint32_t(p) << 19));
-}
-
-void Move::setPromotionPiece(Piece p)
-{ 
-    _data &= ~PROMO_TYPE_MASK;
-    _data |= (PROMO_TYPE_MASK & (uint32_t(p) << 12));
-}
-
-void Move::setEnPassantTargetFile(const int file)
-{ 
-    _data &= ~EP_FILE_MASK;
-    _data |= (EP_FILE_MASK & (uint32_t(file) << 24));
-}
-
-void Move::setPromoting(bool flag)
-{
-    if (flag)
+    if (promoting)
         _data |= PROMO_FLAG_MASK;
-    else
-        _data &= ~PROMO_FLAG_MASK;
-}
 
-void Move::setCapturing(bool flag)
-{
-    if (flag)
+    if (capturing)
         _data |= CAPTURE_FLAG_MASK;
-    else
-        _data &= ~CAPTURE_FLAG_MASK;
-}
 
-void Move::setDoublePushing(bool flag)
-{
-    if (flag)
+    if (doublePushing)
         _data |= DPUSH_FLAG_MASK;
-    else
-        _data &= ~DPUSH_FLAG_MASK;
-}
 
-void Move::setEnPassanting(bool flag)
-{
-    if (flag)
+    if (enPassanting)
         _data |= EP_CAP_FLAG_MASK;
-    else
-        _data &= ~EP_CAP_FLAG_MASK;
-}
 
-void Move::setCastling(bool flag)
-{
-    if (flag)
+    if (castling)
         _data |= CASTL_FLAG_MASK;
-    else
-        _data &= ~CASTL_FLAG_MASK;
-}
 
-void Move::setCastlingDirection(bool flag) // short = true
-{
-    if (flag)
+    if (castlingDirection)
         _data |= CASTL_DIR_MASK;
-    else
-        _data &= ~CASTL_DIR_MASK;
-}
 
+    if (sourceDirtied)
+        _data |= DIRTY_SOURCE_MASK;
+
+    if (targetDirtied)
+        _data |= DIRTY_TARGET_MASK;
+}
 
 Square Move::getSource() const
 {
@@ -212,6 +121,16 @@ bool Move::getCastling() const
 bool Move::getCastlingDirection() const
 {
     return (_data & CASTL_DIR_MASK);
+}
+
+bool Move::getSourceDirtied() const
+{
+    return (_data & DIRTY_SOURCE_MASK);
+}
+
+bool Move::getTargetDirtied() const
+{
+    return (_data & DIRTY_TARGET_MASK);    
 }
 
 

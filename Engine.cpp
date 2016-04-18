@@ -86,7 +86,8 @@ Move Engine::getMove()
 
     stopSearch();
     Move move = _best_move;
-    _board = _board.applyMove(move);
+    //_board = _board.applyMove(move);
+    _board.applyMove(move);
 
     std::cout << "sending (" << move.score << ") " << move << " " << std::endl;
     std::cout << _board << std::endl;
@@ -115,8 +116,12 @@ void Engine::search()
 
         for (Move& m : actions)
         {
-            Board brd(searchBoard.applyMove(m));
-            m.score = - negamax(brd, depth);
+            //Board brd(searchBoard);
+            searchBoard.applyMove(m);
+            //Board brd(searchBoard.applyMove(m));
+            m.score = - negamax(searchBoard, depth);
+            searchBoard.unapplyMove(m);
+            //m.score = - PVS(brd, depth);
             if (_search_stop)
                 return;
         }
@@ -138,18 +143,17 @@ void Engine::search()
         std::cout << depth << " (" << actions[0].score << ") PV: ";
         for (Move& m : _pv)
         {
-            if (Move(0, 0) == m)
+            if (Move(0) == m)
                 break;
             else
                 std::cout << m << " ";
-            m = Move(0, 0);
+            m = Move(0);
         }
         std::cout << std::endl;
 
         ++depth;
     }
 }
-
 
 int Engine::negamax(Board& board,
                     const unsigned int depth,
@@ -198,8 +202,12 @@ int Engine::negamax(Board& board,
                     ++_cutoffs;
                     break;
                 }
-                Board brd(board.applyMove(m));
-                m.score = - negamax(brd, depth - 1, -beta, -alpha, pvHeight + 1);
+                //Board brd(board);
+                board.applyMove(m);
+                
+                // Board brd(board.applyMove(m));
+                m.score = - negamax(board, depth - 1, -beta, -alpha, pvHeight + 1);
+                board.unapplyMove(m);
                 if (_search_stop)
                     return 0;
 
@@ -218,6 +226,123 @@ int Engine::negamax(Board& board,
 }
 
 
+int Engine::PVS(Board& board,
+                const unsigned int depth,
+                int alpha, 
+                int beta,
+                size_t pvHeight)
+{
+    ++_node_expansions;
+    if (_search_stop)
+        return 0;
+    
+    int result(-CHECKMATE);
+
+    if (_ttable.get(board.getHash(), depth, alpha, beta, result))
+        return result;
+
+    if (0 == depth)
+    {
+        result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
+        //result = quiescent(board, alpha, beta);
+        _ttable.set(board.getHash(), result, depth, alpha, beta);
+        return result; 
+    } 
+
+    std::vector<Move> actions(board.getMoves(board._toMove));
+    trimTrifoldRepetition(board, actions);
+
+    for (Move& m: actions)
+    {
+        if (m == _pv[pvHeight])
+        {
+            std::swap(m, actions[0]);
+            break;
+        }
+    }
+
+    if (actions.size() == 0)
+    {
+        TerminalState ts = board.getTerminalState();
+        if (WhiteWin == ts && board._toMove == Black)
+            result = - CHECKMATE;
+        else if (BlackWin == ts && board._toMove == White)
+            result = - CHECKMATE;
+        else if (WhiteWin == ts && board._toMove == White)
+            result = CHECKMATE;
+        else if (BlackWin == ts && board._toMove == Black)
+            result = CHECKMATE;
+        else
+            result = 0;
+
+        _ttable.set(board.getHash(), result, depth, alpha, beta);
+        return result; // stalemate
+    }
+
+    //Board brd(board.applyMove(actions[0]));
+    Board brd(board);
+    brd.applyMove(actions[0]);
+    result = - PVS(brd, depth - 1, -beta, -alpha, pvHeight + 1);
+    if (_search_stop)
+        return 0;
+
+    if (result > alpha)
+    {
+        if (result >= beta)
+        {
+            _ttable.set(board.getHash(), result, depth, alpha, beta);
+            return result;
+        }
+        alpha = result;
+    }
+
+    if (actions.size() == 1)
+    {
+        _ttable.set(board.getHash(), result, depth, alpha, beta);
+        return result;
+    }
+
+    for (size_t i = 1; i < actions.size(); ++i)
+    {
+        //Board brd(board.applyMove(actions[i]));
+        Board brd(board);
+        brd.applyMove(actions[i]);
+
+
+        int score = - PVS(brd, depth - 1, -alpha - 1, -alpha, pvHeight + 1);
+        if (_search_stop)
+            return 0;
+
+        if (score > alpha && score < beta)
+        {
+            score = - PVS(brd, depth - 1, -beta, -alpha, pvHeight + 1);
+            if (_search_stop)
+                return 0;
+
+            if (score > alpha)
+            {
+                alpha = score;
+                _pv[pvHeight] = actions[i];
+            }
+        }
+
+        if (score > result)
+        {
+            if (score >= beta)
+            {
+                ++_cutoffs;
+                _ttable.set(board.getHash(), score, depth, alpha, beta);
+                return score;
+            }
+            result = score;
+        }
+    }
+
+    _ttable.set(board.getHash(), result, depth, alpha, beta);
+    return result; 
+}
+
+
 int Engine::quiescent(Board& board,
                       int alpha,
                       int beta)
@@ -230,11 +355,6 @@ int Engine::quiescent(Board& board,
     if (_ttable.get(board.getHash(), 0, alpha, beta, result))
         return result;
 
-    result = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
-    if (result >= beta)
-        return result;
-    alpha = std::max(alpha, result);
-
     std::vector<Move> actions(board.getMoves(board._toMove));
     trimTrifoldRepetition(board, actions);
     if (actions.size() == 0)
@@ -244,24 +364,29 @@ int Engine::quiescent(Board& board,
             return 0;
         }
     }
-    else
+
+    bool didSomething = false;
+    for (Move& m: actions)
     {
-        for (Move& m: actions)
-        {
-            if (m.score >= beta)
-                return beta;
-
-            if (!m.getCapturing())
-                continue;
+        if (!m.getCapturing())
+            continue;
             
-            Board brd(board.applyMove(m));
-            m.score = - quiescent(brd, -beta, -alpha);
-            if (_search_stop)
-                return 0;
+        didSomething = true;
+        Board brd(board);
+        brd.applyMove(m);
 
-            alpha = std::max(alpha, m.score);
-        }
+        //Board brd(board.applyMove(m));
+        m.score = - quiescent(brd, -beta, -alpha);
+        if (_search_stop)
+            return 0;
+
+        alpha = std::max(alpha, m.score);
+        if (m.score >= beta)
+            return beta;
+
     }
+    if (!didSomething)
+        alpha = Evaluate::GetInstance().getEvaluation(std::ref(board), board._toMove);
 
     _ttable.set(board.getHash(), alpha, 0, alpha, beta);
     return alpha;
@@ -290,7 +415,7 @@ void Engine::startSearch()
     {
         srand(time(NULL));
         for (Move& m: _pv)
-            m = Move(0,0);
+            m = Move(0);
         _search_stop = false;
         _searcher = new std::thread(&Engine::search, this);        
     }    
@@ -329,7 +454,8 @@ void Engine::reportMove(Move move, float time)
 {
     std::cout << "receiving " << move << " " << std::endl;
     _time = time;
-    _board = _board.applyExternalMove(move);
+    _board.applyExternalMove(move);
+    //_board = _board.applyExternalMove(move);
     std::cout << _board << std::endl;
 }
 
@@ -337,22 +463,23 @@ void Engine::reportMove(Move move, float time)
 void Engine::trimTrifoldRepetition(const Board& board, std::vector<Move>& actions) const
 {
     // trim trifold repetition moves for now
+    size_t len = board._moves.size();
     actions.erase(
         std::remove_if(
             actions.begin(),
             actions.end(),
             [&] (Move& move) -> bool
             {
-                if ((move            == board._moves[3]) &&
-                    (board._moves[6] == board._moves[2]) &&
-                    (board._moves[5] == board._moves[1]) &&
-                    (board._moves[4] == board._moves[0]))
+                if ((move            == board._moves[len - 4]) &&
+                    (board._moves[len - 7] == board._moves[len - 3]) &&
+                    (board._moves[len - 6] == board._moves[len - 2]) &&
+                    (board._moves[len - 5] == board._moves[len - 1]))
                 {
                     return true;
                 }
                 return false;
             }),
-        actions.end());    
+        actions.end());
 }
 
 

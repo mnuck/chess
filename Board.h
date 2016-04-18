@@ -31,7 +31,7 @@ public:
 
     std::vector<Move> getMoves(const Color color, const bool checkCheckmate=true);
 
-    Board applyExternalMove(const Move extMove) const;
+    void applyExternalMove(const Move extMove);
 
     ZobristNumber getHash() const { return _hash; }
     TerminalState getTerminalState() const { return _terminalState; }
@@ -42,7 +42,9 @@ public:
 
     bool inCheck(const Color color) const;
     bool inCheckmate(const Color color);
-    Board applyMove(const Move move) const;
+    void applyMove(const Move move);
+    void unapplyMove(const Move move);
+    
 private:
 
     BitBoard getUnsafe(Color color) const;
@@ -76,7 +78,7 @@ private:
 
     std::array<BitBoard, 6> _pieces;
     std::array<BitBoard, 2> _colors;
-    std::array<Move, 7> _moves;
+    std::vector<Move> _moves;
     BitBoard _dirty;
     Color _toMove;
     ZobristNumber _hash;

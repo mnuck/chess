@@ -31,6 +31,12 @@ public:
 
 private:
 
+    int PVS(Board& board,
+            const unsigned int depth,
+            int alpha=-CHECKMATE,
+            int beta=CHECKMATE,
+            size_t pvHeight=1);
+
     int negamax(Board& board,
                 const unsigned int depth,
                 int alpha=-CHECKMATE,

@@ -14,10 +14,7 @@ class Move
 public:
     Move(): _data(0x0000) {}
     Move(uint32_t data): _data(data) {}
-    Move(Square source, Square target);
-    Move(Square source, Square target, bool capturing);
     Move(Square source, Square target, Piece piece);
-    Move(Square source, Square target, Piece piece, bool capturing);
     Move(
         Square source,
         Square target,
@@ -30,23 +27,11 @@ public:
         bool enPassanting,
         int enPassantTargetFile,
         bool castling,
-        bool castlingDirection);
+        bool castlingDirection,
+        bool sourceDirtied,
+        bool targetDirtied);
+
     operator uint32_t() const { return _data; }
-
-    void setSource(Square s);
-    void setTarget(Square t);
-
-    void setMovingPiece(Piece p);
-    void setCapturedPiece(Piece p);
-    void setPromotionPiece(Piece p);
-
-    void setPromoting(bool flag);
-    void setCapturing(bool flag);
-    void setDoublePushing(bool flag);
-    void setEnPassanting(bool flag);
-    void setEnPassantTargetFile(const int file);
-    void setCastling(bool flag);
-    void setCastlingDirection(bool flag); // short = true
 
     Square getSource() const;
     Square getTarget() const;
@@ -63,6 +48,9 @@ public:
     
     bool getCastling() const;
     bool getCastlingDirection() const;
+
+    bool getSourceDirtied() const;
+    bool getTargetDirtied() const;
 
     bool operator==(const Move& rhs) const;
 
@@ -84,7 +72,9 @@ private:
     // 3 for en passant target file
     // 1 if we're castling
     // 1 for castling direction
-    // 3 unused
+    // 1 for "this move dirtied source"
+    // 1 for "this move dirtied target"
+    // 1 unused
     static const uint32_t SOURCE_MASK       = 0b00000000000000000000000000111111;
     static const uint32_t TARGET_MASK       = 0b00000000000000000000111111000000;
     static const uint32_t PROMO_TYPE_MASK   = 0b00000000000000000011000000000000;
@@ -97,6 +87,8 @@ private:
     static const uint32_t EP_FILE_MASK      = 0b00000111000000000000000000000000;
     static const uint32_t CASTL_FLAG_MASK   = 0b00001000000000000000000000000000;
     static const uint32_t CASTL_DIR_MASK    = 0b00010000000000000000000000000000;
+    static const uint32_t DIRTY_SOURCE_MASK = 0b00100000000000000000000000000000;
+    static const uint32_t DIRTY_TARGET_MASK = 0b01000000000000000000000000000000;
 };
 
 std::ostream& operator<<(std::ostream& lhs, const Move& rhs);
